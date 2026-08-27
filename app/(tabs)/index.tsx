@@ -79,6 +79,29 @@ const styles = StyleSheet.create({
     padding: 20
   },
 
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 30,
+    position: 'relative',
+  },
+
+  sairBotao: {
+    position: 'absolute',
+    right: 0,
+    backgroundColor: '#f0eeff',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+
+  sairTexto: {
+    fontSize: 12,
+    color: '#6c4cff',
+    fontWeight: '600',
+  },
+
   logo: {
     fontSize: 30,
     fontWeight: 'bold',
