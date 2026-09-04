@@ -1,174 +1,156 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from "react";
+
 import {
-  View,
-  Text,
+  SafeAreaView,
   StyleSheet,
+  Text,
   TouchableOpacity,
-  SafeAreaView
-} from 'react-native';
+  View,
+} from "react-native";
 
-export default function App() {
+import { router, useFocusEffect } from "expo-router";
 
-  const [selecionado, setSelecionado] = useState('');
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+export default function HomeScreen() {
+  const [nome, setNome] = useState("");
+
+  useFocusEffect(
+    useCallback(() => {
+      async function carregarNome() {
+        try {
+          const nomeSalvo = await AsyncStorage.getItem("@evolua_nome");
+
+          if (nomeSalvo) {
+            setNome(nomeSalvo);
+          }
+        } catch (error) {
+          console.log("Erro ao carregar nome:", error);
+        }
+      }
+
+      carregarNome();
+    }, []),
+  );
+
+  function abrirArea(area: string) {
+    router.push({
+      pathname: "/atividades",
+      params: {
+        area: area,
+      },
+    });
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-
-      <Text style={styles.logo}>Evolua.me</Text>
+      <Text style={styles.logo}>EvoluaMe</Text>
 
       <Text style={styles.titulo}>
-        Onde você quer evoluir?
+        Olá{nome ? `, ${nome}` : ""}, onde você quer evoluir?
       </Text>
 
-      <Text style={styles.subtitulo}>
-        Escolha uma área para começar
-      </Text>
+      <Text style={styles.subtitulo}>Escolha uma área para começar</Text>
 
       <View style={styles.opcoes}>
-
         <TouchableOpacity
-          style={selecionado === 'Estudos' ? styles.opcaoSelecionada : styles.opcao}
-          onPress={() => setSelecionado('Estudos')}
+          style={styles.opcao}
+          onPress={() => abrirArea("Estudos")}
         >
           <Text style={styles.emoji}>📚</Text>
+
           <Text style={styles.texto}>Estudos</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={selecionado === 'Atividade Física' ? styles.opcaoSelecionada : styles.opcao}
-          onPress={() => setSelecionado('Atividade Física')}
+          style={styles.opcao}
+          onPress={() => abrirArea("Atividade Física")}
         >
           <Text style={styles.emoji}>🏃</Text>
+
           <Text style={styles.texto}>Atividade Física</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={selecionado === 'Leitura' ? styles.opcaoSelecionada : styles.opcao}
-          onPress={() => setSelecionado('Leitura')}
+          style={styles.opcao}
+          onPress={() => abrirArea("Leitura")}
         >
           <Text style={styles.emoji}>📖</Text>
+
           <Text style={styles.texto}>Leitura</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={selecionado === 'Línguas Estrangeiras' ? styles.opcaoSelecionada : styles.opcao}
-          onPress={() => setSelecionado('Línguas Estrangeiras')}
+          style={styles.opcao}
+          onPress={() => abrirArea("Línguas Estrangeiras")}
         >
           <Text style={styles.emoji}>🌎</Text>
+
           <Text style={styles.texto}>Línguas Estrangeiras</Text>
         </TouchableOpacity>
-
-
       </View>
-
-      {selecionado !== '' && (
-        <Text style={styles.escolha}>
-          Você escolheu: {selecionado}
-        </Text>
-      )}
-
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 20
-  },
-
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 30,
-    position: 'relative',
-  },
-
-  sairBotao: {
-    position: 'absolute',
-    right: 0,
-    backgroundColor: '#f0eeff',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-
-  sairTexto: {
-    fontSize: 12,
-    color: '#6c4cff',
-    fontWeight: '600',
+    backgroundColor: "#F5F4FF",
+    padding: 20,
   },
 
   logo: {
     fontSize: 30,
-    fontWeight: 'bold',
-    color: '#6c4cff',
-    textAlign: 'center',
-    marginTop: 30
+    fontWeight: "bold",
+    color: "#6C4CFF",
+    textAlign: "center",
+    marginTop: 30,
   },
 
   titulo: {
     fontSize: 25,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: 40
+    fontWeight: "bold",
+    color: "#1A1040",
+    textAlign: "center",
+    marginTop: 40,
   },
 
   subtitulo: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
     marginTop: 10,
-    marginBottom: 30
+    marginBottom: 30,
   },
 
   opcoes: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between'
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
 
   opcao: {
-    width: '48%',
+    width: "48%",
     height: 130,
-    backgroundColor: 'white',
+    backgroundColor: "#FFFFFF",
     borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15
-  },
-
-  opcaoSelecionada: {
-    width: '48%',
-    height: 130,
-    backgroundColor: '#e5ddff',
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 15,
-    borderWidth: 2,
-    borderColor: '#6c4cff'
+    borderWidth: 1,
+    borderColor: "#E2DEFF",
   },
 
   emoji: {
     fontSize: 35,
-    marginBottom: 10
+    marginBottom: 10,
   },
 
   texto: {
     fontSize: 15,
-    fontWeight: 'bold'
+    fontWeight: "bold",
+    color: "#1A1040",
+    textAlign: "center",
   },
-
-  escolha: {
-    textAlign: 'center',
-    marginTop: 20,
-    fontSize: 16,
-    color: '#6c4cff',
-    fontWeight: 'bold'
-  }
-
 });
