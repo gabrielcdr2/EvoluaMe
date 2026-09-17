@@ -1,31 +1,21 @@
 # Dependências
 node_modules/
 
-# Env — NUNCA commitar!
+# Env
 .env
 .env.local
 .env*.local
 
-# Expo
-.expo/
-dist/
-web-build/
-
 # Build
+dist/
 build/
 
 # Logs
 *.log
 npm-debug.*
-yarn-debug.*
-yarn-error.*
 
 # OS
 .DS_Store
-*.pem
-
-# TypeScript
-*.tsbuildinfo
 
 # AI tools
 .claude/

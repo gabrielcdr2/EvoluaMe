@@ -8,41 +8,33 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useUsuario } from '../../hooks/useUsuario';
+import { buscarProgresso } from '../../services/api';
 
 export default function HomeScreen() {
+  const usuarioId = useUsuario();
   const [nome, setNome] = useState('');
   const [nivel, setNivel] = useState(1);
   const [xp, setXp] = useState(0);
 
-  // Carrega nome, nível e XP sempre que a Home recebe foco.
-  // Isso é importante para atualizar o XP ao voltar de um desafio.
+  // Carrega nome (local) e XP/nível (API) sempre que a Home recebe foco.
   useFocusEffect(
     useCallback(() => {
       carregarDados();
-    }, [])
+    }, [usuarioId])
   );
 
   async function carregarDados() {
     try {
+      // Nome salvo localmente
       const nomeSalvo = await AsyncStorage.getItem('@evolua_nome');
-      const nivelSalvo = await AsyncStorage.getItem('@evolua_nivel');
-      const xpSalvo = await AsyncStorage.getItem('@evolua_xp');
+      if (nomeSalvo) setNome(nomeSalvo);
 
-      if (nomeSalvo) {
-        setNome(nomeSalvo);
-      }
-
-      if (nivelSalvo) {
-        setNivel(Number(nivelSalvo));
-      } else {
-        setNivel(1);
-      }
-
-      if (xpSalvo) {
-        setXp(Number(xpSalvo));
-      } else {
-        setXp(0);
-      }
+      // XP e nível vindos da API
+      if (!usuarioId) return;
+      const progresso = await buscarProgresso(usuarioId);
+      setNivel(progresso.nivel ?? 1);
+      setXp(progresso.xp ?? 0);
     } catch (error) {
       console.log('Erro ao carregar os dados:', error);
     }

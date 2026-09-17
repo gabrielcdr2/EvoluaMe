@@ -11,14 +11,21 @@ import {
 
 import { router, useLocalSearchParams } from "expo-router";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useUsuario } from "../hooks/useUsuario";
+import {
+  buscarAtividades,
+  criarAtividade,
+  deletarAtividade,
+  concluirAtividadeAPI,
+} from "../services/api";
 
 type Atividade = {
-  id: string;
+  _id: string;
   nome: string;
 };
 
 export default function AtividadesScreen() {
+  const usuarioId = useUsuario();
   const params = useLocalSearchParams();
 
   const area =
@@ -29,6 +36,7 @@ export default function AtividadesScreen() {
   const [texto, setTexto] = useState("");
   const [erro, setErro] = useState("");
   const [mensagem, setMensagem] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
   const [atividades, setAtividades] = useState<Atividade[]>([]);
 
@@ -54,204 +62,74 @@ export default function AtividadesScreen() {
   const [recomendacao, setRecomendacao] =
     useState("");
 
-  const chaveArmazenamento =
-    `@evoluame_atividades_${area}`;
-
   useEffect(() => {
-    carregarAtividades();
-  }, [area]);
+    if (usuarioId) carregarAtividades();
+  }, [area, usuarioId]);
 
   async function carregarAtividades() {
     try {
-      setAtividades([]);
+      setCarregando(true);
       setTexto("");
-
-      const dadosSalvos =
-        await AsyncStorage.getItem(
-          chaveArmazenamento
-        );
-
-      if (dadosSalvos) {
-        const listaSalva =
-          JSON.parse(dadosSalvos);
-
-        setAtividades(listaSalva);
-      }
+      const lista = await buscarAtividades(usuarioId!, area);
+      setAtividades(lista);
     } catch (error) {
-      console.log(
-        "Erro ao carregar atividades:",
-        error
-      );
+      console.log("Erro ao carregar atividades:", error);
+    } finally {
+      setCarregando(false);
     }
   }
 
-  async function salvarAtividades(
-    novaLista: Atividade[]
-  ) {
-    try {
-      await AsyncStorage.setItem(
-        chaveArmazenamento,
-        JSON.stringify(novaLista)
-      );
-    } catch (error) {
-      console.log(
-        "Erro ao salvar atividades:",
-        error
-      );
-    }
-  }
-
-  function adicionarAtividade() {
+  async function adicionarAtividade() {
     const nome = texto.trim();
 
     if (nome === "") {
-      setErro(
-        "Digite uma atividade antes de adicionar."
-      );
-
+      setErro("Digite uma atividade antes de adicionar.");
       return;
     }
 
-    setErro("");
-    setMensagem("");
+    if (!usuarioId) return;
 
-    const novaAtividade: Atividade = {
-      id: Date.now().toString(),
-      nome: nome,
-    };
-
-    const novaLista = [
-      ...atividades,
-      novaAtividade,
-    ];
-
-    setAtividades(novaLista);
-
-    salvarAtividades(novaLista);
-
-    setTexto("");
+    try {
+      setErro("");
+      setMensagem("");
+      const nova = await criarAtividade(usuarioId, area, nome);
+      setAtividades((prev) => [nova, ...prev]);
+      setTexto("");
+    } catch (error) {
+      setErro("Não foi possível adicionar o desafio.");
+    }
   }
 
   async function adicionarRecomendacao() {
-    if (recomendacao === "") {
-      return;
-    }
+    if (recomendacao === "" || !usuarioId) return;
 
-    const novaAtividade: Atividade = {
-      id: Date.now().toString(),
-      nome: recomendacao,
-    };
-
-    const novaLista = [
-      ...atividades,
-      novaAtividade,
-    ];
-
-    setAtividades(novaLista);
-
-    await salvarAtividades(novaLista);
-
-    setMensagem(
-      "🎯 Desafio recomendado adicionado!"
-    );
-  }
-
-  async function removerAtividade(
-    id: string
-  ) {
-    const novaLista =
-      atividades.filter(
-        (atividade) =>
-          atividade.id !== id
-      );
-
-    setAtividades(novaLista);
-
-    await salvarAtividades(
-      novaLista
-    );
-  }
-
-  async function concluirAtividade(
-    id: string
-  ) {
     try {
-      const xpSalvo =
-        await AsyncStorage.getItem(
-          "@evolua_xp"
-        );
-
-      const nivelSalvo =
-        await AsyncStorage.getItem(
-          "@evolua_nivel"
-        );
-
-      let xpAtual =
-        xpSalvo !== null
-          ? Number(xpSalvo)
-          : 0;
-
-      let nivelAtual =
-        nivelSalvo !== null
-          ? Number(nivelSalvo)
-          : 1;
-
-      const recompensa = 50;
-
-      xpAtual += recompensa;
-
-      const xpNecessario =
-        nivelAtual * 100;
-
-      let subiuDeNivel = false;
-
-      if (
-        xpAtual >= xpNecessario
-      ) {
-        xpAtual =
-          xpAtual -
-          xpNecessario;
-
-        nivelAtual += 1;
-
-        subiuDeNivel = true;
-      }
-
-      await AsyncStorage.setItem(
-        "@evolua_xp",
-        String(xpAtual)
-      );
-
-      await AsyncStorage.setItem(
-        "@evolua_nivel",
-        String(nivelAtual)
-      );
-
-      const novaLista =
-        atividades.filter(
-          (atividade) =>
-            atividade.id !== id
-        );
-
-      setAtividades(novaLista);
-
-      await salvarAtividades(
-        novaLista
-      );
-
-      if (subiuDeNivel) {
-        setMensagem(
-          `⭐ Level Up! Você chegou ao nível ${nivelAtual}!`
-        );
-      } else {
-        setMensagem(
-          `🎉 Desafio concluído! +${recompensa} XP`
-        );
-      }
+      const nova = await criarAtividade(usuarioId, area, recomendacao);
+      setAtividades((prev) => [nova, ...prev]);
+      setMensagem("🎯 Desafio recomendado adicionado!");
     } catch (error) {
-      setMensagem(
-        "Não foi possível concluir o desafio."
-      );
+      setMensagem("Não foi possível adicionar a recomendação.");
+    }
+  }
+
+  async function removerAtividade(id: string) {
+    try {
+      await deletarAtividade(id);
+      setAtividades((prev) => prev.filter((a) => a._id !== id));
+    } catch (error) {
+      console.log("Erro ao remover atividade:", error);
+    }
+  }
+
+  async function concluirAtividade(id: string) {
+    if (!usuarioId) return;
+
+    try {
+      const resultado = await concluirAtividadeAPI(usuarioId, id);
+      setAtividades((prev) => prev.filter((a) => a._id !== id));
+      setMensagem(resultado.mensagem ?? "🎉 Desafio concluído!");
+    } catch (error) {
+      setMensagem("Não foi possível concluir o desafio.");
     }
   }
 
@@ -748,7 +626,7 @@ export default function AtividadesScreen() {
         atividades.map(
           (item) => (
             <View
-              key={item.id}
+              key={item._id}
               style={
                 styles.cardDesafio
               }
@@ -783,7 +661,7 @@ export default function AtividadesScreen() {
                 }
                 onPress={() =>
                   concluirAtividade(
-                    item.id
+                    item._id
                   )
                 }
               >
@@ -802,7 +680,7 @@ export default function AtividadesScreen() {
                 }
                 onPress={() =>
                   removerAtividade(
-                    item.id
+                    item._id
                   )
                 }
               >
