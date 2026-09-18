@@ -1,5 +1,5 @@
 // Centraliza todas as chamadas HTTP para a API do EvoluaMe
-const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:3000';
+const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://evoluame.onrender.com';
 
 // ─── Auth ─────────────────────────────────────────────────────
 
