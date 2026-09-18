@@ -29,6 +29,8 @@ export default function RootLayout() {
 
         <Stack.Screen name="atividades" options={{ headerShown: false }} />
 
+        <Stack.Screen name="nova-jornada" options={{ headerShown: false }} />
+
         <Stack.Screen
           name="modal"
           options={{

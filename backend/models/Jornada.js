@@ -15,7 +15,7 @@ const JornadaSchema = new mongoose.Schema(
     },
     categoria: {
       type: String,
-      enum: ['Físico', 'Aprendizado'],
+      enum: ['Físico', 'Mental'],
       required: true, 
     },
     nivelJornada: {

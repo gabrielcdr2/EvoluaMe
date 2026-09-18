@@ -150,7 +150,7 @@ export default function HomeScreen() {
             <Text style={styles.journeyTitle}>Jornada Atual</Text>
             <TouchableOpacity
               style={styles.newJourneyBtn}
-              onPress={() => router.push('/atividades')}
+              onPress={() => router.push('/nova-jornada')}
             >
               <Ionicons name="add" size={16} color={COLORS.textDark} />
               <Text style={styles.newJourneyText}>Nova jornada</Text>
@@ -222,7 +222,7 @@ export default function HomeScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.emptyJourneyBtn}
-                onPress={() => router.push('/atividades')}
+                onPress={() => router.push('/nova-jornada')}
               >
                 <Ionicons name="add" size={16} color={COLORS.green} />
                 <Text style={styles.emptyJourneyBtnText}>Criar jornada</Text>
