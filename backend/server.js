@@ -5,6 +5,9 @@ const cors = require('cors');
 
 const atividadesRoutes = require('./routes/atividades');
 const progressoRoutes = require('./routes/progresso');
+const authRoutes = require('./routes/auth');
+const jornadasRoutes = require('./routes/jornadas');
+const tarefasRoutes = require('./routes/tarefas');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,6 +29,9 @@ app.get('/', (req, res) => {
 
 app.use('/api/atividades', atividadesRoutes);
 app.use('/api/progresso', progressoRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/jornadas', jornadasRoutes);
+app.use('/api/tarefas', tarefasRoutes);
 
 // ─── Banco de Dados ──────────────────────────────────────────
 async function conectarDB() {

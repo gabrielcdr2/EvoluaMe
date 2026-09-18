@@ -1,398 +1,589 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
+  Text,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
-import { useUsuario } from '../../hooks/useUsuario';
-import { buscarProgresso } from '../../services/api';
+import { LinearGradient } from 'expo-linear-gradient';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { router, useFocusEffect } from 'expo-router';
+
+import CircularProgress from '../../components/CircularProgress';
+import TaskItem from '../../components/TaskItem';
+import { useAuth } from '../../hooks/useAuth';
+import { buscarJornadaAtiva, Jornada, Tarefa } from '../../services/api';
+
+// ---------- Cores ----------
+const COLORS = {
+  bgLight: '#FFFFFF',
+  bgDark: '#131313',
+  cardLight: '#F4F4F5',
+  cardDark: '#212124',
+  green: '#2FD98D',
+  greenDark: '#0B2A20',
+  purpleTrack: '#E3DFF7',
+  gold: '#F5C518',
+  textDark: '#161616',
+  textGray: '#8A8A8E',
+  textWhite: '#FFFFFF',
+  textWhiteMuted: 'rgba(255,255,255,0.65)',
+};
 
 export default function HomeScreen() {
-  const usuarioId = useUsuario();
-  const [nome, setNome] = useState('');
-  const [nivel, setNivel] = useState(1);
-  const [xp, setXp] = useState(0);
+  const { usuario, token, carregando: carregandoAuth } = useAuth();
 
-  // Carrega nome (local) e XP/nível (API) sempre que a Home recebe foco.
+  const [jornada, setJornada] = useState<Jornada | null>(null);
+  const [tarefas, setTarefas] = useState<Tarefa[]>([]);
+  const [carregandoJornada, setCarregandoJornada] = useState(false);
+
+  const nivel = usuario?.nivelGlobal ?? 1;
+  const xp = usuario?.xpTotal ?? 0;
+  const xpNecessario = nivel * 100;
+  const progressoXP = Math.min((xp / xpNecessario) * 100, 100);
+
+  // Calcula progresso da jornada com base nas tarefas
+  const totalTarefas = tarefas.length;
+  const tarefasConcluidas = tarefas.filter((t) => t.status === 'Concluída').length;
+  const progressoJornada = totalTarefas > 0 ? Math.round((tarefasConcluidas / totalTarefas) * 100) : 0;
+
+  // Carrega jornada ativa toda vez que a Home recebe foco
   useFocusEffect(
     useCallback(() => {
-      carregarDados();
-    }, [usuarioId])
+      if (!token) return;
+      carregarJornada();
+    }, [token])
   );
 
-  async function carregarDados() {
+  async function carregarJornada() {
     try {
-      // Nome salvo localmente
-      const nomeSalvo = await AsyncStorage.getItem('@evolua_nome');
-      if (nomeSalvo) setNome(nomeSalvo);
-
-      // XP e nível vindos da API
-      if (!usuarioId) return;
-      const progresso = await buscarProgresso(usuarioId);
-      setNivel(progresso.nivel ?? 1);
-      setXp(progresso.xp ?? 0);
+      setCarregandoJornada(true);
+      const dados = await buscarJornadaAtiva(token!);
+      setJornada(dados.jornada);
+      setTarefas(dados.tarefas);
     } catch (error) {
-      console.log('Erro ao carregar os dados:', error);
+      console.log('Erro ao carregar jornada:', error);
+    } finally {
+      setCarregandoJornada(false);
     }
   }
 
-  function abrirArea(area: string) {
-    router.push({
-      pathname: '/atividades',
-      params: { area },
-    });
+  // Formata a data de criação da jornada
+  function formatarData(iso: string) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
   }
 
-  // A quantidade de XP necessária aumenta conforme o nível.
-  const xpNecessario = nivel * 100;
-
-  const progresso = Math.min(
-    (xp / xpNecessario) * 100,
-    100
-  );
+  if (carregandoAuth) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.green} />
+      </View>
+    );
+  }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.conteudo}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* LOGO */}
+    <SafeAreaView style={styles.safeAreaTop}>
+      <StatusBar barStyle="dark-content" />
+      <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
 
-      <View style={styles.logoContainer}>
-        <Text style={styles.logo}>
-          Evolua
-          <Text style={styles.logoDestaque}>.me</Text>
-        </Text>
-      </View>
-
-      {/* SAUDAÇÃO */}
-
-      <Text style={styles.saudacao}>
-        Olá{nome ? `, ${nome}` : ''}! 👋
-      </Text>
-
-      <Text style={styles.titulo}>
-        Onde você quer evoluir?
-      </Text>
-
-      {/* CARD DO PERSONAGEM */}
-
-      <View style={styles.cardNivel}>
-        <View style={styles.nivelTopo}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarEmoji}>👤</Text>
+        {/* ---------- Cabeçalho (fundo claro) ---------- */}
+        <View style={styles.header}>
+          <View style={styles.headerRow}>
+            <Image
+              source={{ uri: 'https://i.pravatar.cc/100' }}
+              style={styles.avatar}
+            />
+            <View style={{ marginLeft: 12 }}>
+              <Text style={styles.welcomeText}>Bem vindo(a),</Text>
+              <Text style={styles.userName}>{usuario?.nome || 'Jogador'}</Text>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>NÍVEL {nivel}</Text>
+              </View>
+            </View>
           </View>
 
-          <View style={styles.informacoesNivel}>
-            <Text style={styles.textoNivel}>
-              NÍVEL {nivel}
-            </Text>
+          <View style={styles.divider} />
 
-            <Text style={styles.textoXP}>
-              {xp} / {xpNecessario} XP
-            </Text>
+          <Text style={styles.sectionTitleDark}>Visão geral</Text>
+
+          <View style={styles.overviewRow}>
+            <View style={styles.overviewCard}>
+              <Ionicons name="calendar-outline" size={22} color={COLORS.textDark} />
+              <Text style={styles.overviewNumber}>{xp}</Text>
+              <Text style={styles.overviewLabel}>XP Total</Text>
+              <Text style={styles.overviewSubLabel}>Acumulado</Text>
+            </View>
+
+            <View style={styles.overviewCard}>
+              <CircularProgress
+                size={44}
+                strokeWidth={5}
+                progress={progressoXP}
+                trackColor={COLORS.purpleTrack}
+                progressColor={COLORS.green}
+              >
+                <Text style={styles.overviewPercent}>{Math.round(progressoXP)}%</Text>
+              </CircularProgress>
+              <Text style={[styles.overviewLabel, { marginTop: 8 }]}>Progresso</Text>
+              <Text style={styles.overviewSubLabel}>Próx. nível</Text>
+            </View>
+
+            <View style={styles.overviewCard}>
+              <FontAwesome5 name="medal" size={22} color={COLORS.gold} />
+              <Text style={styles.overviewNumber}>{nivel}</Text>
+              <Text style={styles.overviewLabel}>Nível atual</Text>
+            </View>
           </View>
         </View>
 
-        {/* BARRA DE XP */}
+        {/* ---------- Corpo (fundo escuro) ---------- */}
+        <View style={styles.darkSheet}>
+          <View style={styles.journeyHeaderRow}>
+            <Text style={styles.journeyTitle}>Jornada Atual</Text>
+            <TouchableOpacity
+              style={styles.newJourneyBtn}
+              onPress={() => router.push('/atividades')}
+            >
+              <Ionicons name="add" size={16} color={COLORS.textDark} />
+              <Text style={styles.newJourneyText}>Nova jornada</Text>
+            </TouchableOpacity>
+          </View>
 
-        <View style={styles.barraFundo}>
-          <View
-            style={[
-              styles.barraXP,
-              {
-                width: `${progresso}%`,
-              },
-            ]}
-          />
+          {/* Card de jornada */}
+          {carregandoJornada ? (
+            <View style={styles.journeyLoading}>
+              <ActivityIndicator color={COLORS.green} />
+            </View>
+          ) : jornada ? (
+            <LinearGradient
+              colors={[COLORS.green, COLORS.greenDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.journeyCard}
+            >
+              <View style={styles.journeyCardTop}>
+                <View style={styles.bookmarkIcon}>
+                  <Ionicons name="bookmark" size={16} color={COLORS.textWhite} />
+                </View>
+                <TouchableOpacity style={styles.arrowBtn}>
+                  <Ionicons
+                    name="arrow-up-outline"
+                    style={{ transform: [{ rotate: '45deg' }] }}
+                    size={18}
+                    color={COLORS.textWhite}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.journeyCardBody}>
+                <View>
+                  <Text style={styles.journeyName}>{jornada.titulo}</Text>
+                  <Text style={styles.journeyTags}>{jornada.categoria}</Text>
+                  <Text style={styles.journeyTasksCount}>
+                    {tarefas.length} {tarefas.length === 1 ? 'Tarefa' : 'Tarefas'}
+                  </Text>
+                  <View style={styles.journeyDateRow}>
+                    <Ionicons name="calendar-outline" size={13} color={COLORS.textWhiteMuted} />
+                    <Text style={styles.journeyDate}>{formatarData(jornada.createdAt)}</Text>
+                  </View>
+                </View>
+
+                <CircularProgress
+                  size={70}
+                  strokeWidth={6}
+                  progress={progressoJornada}
+                  trackColor="rgba(255,255,255,0.25)"
+                  progressColor={COLORS.textWhite}
+                >
+                  <Text style={styles.journeyPercent}>{progressoJornada}%</Text>
+                </CircularProgress>
+              </View>
+            </LinearGradient>
+          ) : (
+            /* Estado vazio: nenhuma jornada */
+            <LinearGradient
+              colors={[COLORS.green, COLORS.greenDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.journeyCard, styles.journeyCardEmpty]}
+            >
+              <Ionicons name="map-outline" size={36} color="rgba(255,255,255,0.5)" />
+              <Text style={styles.emptyJourneyTitle}>Nenhuma jornada encontrada</Text>
+              <Text style={styles.emptyJourneySubtitle}>
+                Crie sua primeira jornada e comece a evoluir!
+              </Text>
+              <TouchableOpacity
+                style={styles.emptyJourneyBtn}
+                onPress={() => router.push('/atividades')}
+              >
+                <Ionicons name="add" size={16} color={COLORS.green} />
+                <Text style={styles.emptyJourneyBtnText}>Criar jornada</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          )}
+
+          {/* Próximas Tarefas */}
+          <Text style={styles.nextTasksTitle}>Próximas Tarefas</Text>
+
+          {!jornada ? (
+            /* Nenhuma jornada: aviso abaixo do título */
+            <View style={styles.emptyTasksContainer}>
+              <Ionicons name="rocket-outline" size={28} color={COLORS.textGray} />
+              <Text style={styles.emptyTasksText}>
+                Crie uma jornada para começar
+              </Text>
+            </View>
+          ) : tarefas.length === 0 ? (
+            <View style={styles.emptyTasksContainer}>
+              <Ionicons name="checkmark-done-outline" size={28} color={COLORS.green} />
+              <Text style={styles.emptyTasksText}>Nenhuma tarefa pendente!</Text>
+            </View>
+          ) : (
+            tarefas.map((t) => (
+              <TaskItem
+                key={t._id}
+                title={t.titulo}
+                date={t.dataConclusao ? 'Concluída' : 'Pendente'}
+                inProgress={t.status === 'Aguardando Validação'}
+              />
+            ))
+          )}
+
+          <View style={{ height: 100 }} />
         </View>
+      </ScrollView>
 
-        <Text style={styles.porcentagem}>
-          {Math.round(progresso)}% para o próximo nível
-        </Text>
-      </View>
-
-      {/* ÁREAS */}
-
-      <Text style={styles.subtitulo}>
-        Escolha uma área para começar
-      </Text>
-
-      <View style={styles.listaAreas}>
-        <TouchableOpacity
-          style={styles.botaoArea}
-          onPress={() => abrirArea('Estudos')}
-          activeOpacity={0.8}
-        >
-          <View style={styles.iconeContainer}>
-            <Text style={styles.icone}>📚</Text>
-          </View>
-
-          <View style={styles.textoAreaContainer}>
-            <Text style={styles.nomeArea}>
-              Estudos
-            </Text>
-
-            <Text style={styles.descricaoArea}>
-              Evolua seus conhecimentos
-            </Text>
-          </View>
-
-          <Text style={styles.seta}>›</Text>
+      {/* ---------- Barra de navegação inferior ---------- */}
+      <View style={styles.tabBar}>
+        <TouchableOpacity style={styles.tabItem}>
+          <Ionicons name="home" size={22} color={COLORS.green} />
+          <Text style={[styles.tabLabel, { color: COLORS.green }]}>Início</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.botaoArea}
-          onPress={() => abrirArea('Atividade Física')}
-          activeOpacity={0.8}
+          style={styles.tabItem}
+          onPress={() => router.push('/atividades')}
         >
-          <View style={styles.iconeContainer}>
-            <Text style={styles.icone}>🏃</Text>
-          </View>
-
-          <View style={styles.textoAreaContainer}>
-            <Text style={styles.nomeArea}>
-              Atividade Física
-            </Text>
-
-            <Text style={styles.descricaoArea}>
-              Supere seus limites
-            </Text>
-          </View>
-
-          <Text style={styles.seta}>›</Text>
+          <MaterialCommunityIcons name="compass-outline" size={22} color={COLORS.textGray} />
+          <Text style={styles.tabLabel}>Jornadas</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.botaoArea}
-          onPress={() => abrirArea('Leitura')}
-          activeOpacity={0.8}
-        >
-          <View style={styles.iconeContainer}>
-            <Text style={styles.icone}>📖</Text>
-          </View>
-
-          <View style={styles.textoAreaContainer}>
-            <Text style={styles.nomeArea}>
-              Leitura
-            </Text>
-
-            <Text style={styles.descricaoArea}>
-              Crie o hábito de ler
-            </Text>
-          </View>
-
-          <Text style={styles.seta}>›</Text>
+        <TouchableOpacity style={styles.tabCenterWrapper}>
+          <LinearGradient
+            colors={[COLORS.green, '#0EA5E9']}
+            style={styles.tabCenterCircle}
+          >
+            <Text style={styles.tabCenterLetter}>E</Text>
+          </LinearGradient>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.botaoArea}
-          onPress={() => abrirArea('Línguas Estrangeiras')}
-          activeOpacity={0.8}
-        >
-          <View style={styles.iconeContainer}>
-            <Text style={styles.icone}>🌎</Text>
-          </View>
+        <TouchableOpacity style={styles.tabItem}>
+          <Ionicons name="person-outline" size={22} color={COLORS.textGray} />
+          <Text style={styles.tabLabel}>Perfil</Text>
+        </TouchableOpacity>
 
-          <View style={styles.textoAreaContainer}>
-            <Text style={styles.nomeArea}>
-              Línguas Estrangeiras
-            </Text>
-
-            <Text style={styles.descricaoArea}>
-              Aprenda um novo idioma
-            </Text>
-          </View>
-
-          <Text style={styles.seta}>›</Text>
+        <TouchableOpacity style={styles.tabItem}>
+          <Ionicons name="settings-outline" size={22} color={COLORS.textGray} />
+          <Text style={styles.tabLabel}>Config.</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
+// ---------- Estilos ----------
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
     flex: 1,
-    backgroundColor: '#F8F7FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
-
-  conteudo: {
-    padding: 24,
-    paddingTop: 55,
-    paddingBottom: 50,
+  safeAreaTop: {
+    flex: 1,
+    backgroundColor: COLORS.bgLight,
   },
-
-  logoContainer: {
-    marginBottom: 35,
+  header: {
+    backgroundColor: COLORS.bgLight,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
-
-  logo: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: '#1A1040',
-  },
-
-  logoDestaque: {
-    color: '#6C4CFF',
-  },
-
-  saudacao: {
-    fontSize: 16,
-    color: '#7C6FAE',
-    marginBottom: 5,
-  },
-
-  titulo: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1A1040',
-  },
-
-  /* CARD DO NÍVEL */
-
-  cardNivel: {
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-    borderRadius: 20,
-    marginTop: 25,
-    marginBottom: 30,
-
-    borderWidth: 1,
-    borderColor: '#E2DEFF',
-
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-
-  nivelTopo: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   avatar: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: '#EEEAFE',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+  },
+  welcomeText: {
+    fontSize: 13,
+    color: COLORS.textGray,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.textDark,
+    marginTop: 2,
+  },
+  badge: {
+    marginTop: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.green,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  badgeText: {
+    color: COLORS.textWhite,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E8E8E8',
+    marginVertical: 18,
+  },
+  sectionTitleDark: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textDark,
+    marginBottom: 12,
+  },
+  overviewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  overviewCard: {
+    flex: 1,
+    backgroundColor: COLORS.cardLight,
+    borderRadius: 16,
+    paddingVertical: 14,
+    marginHorizontal: 4,
+    alignItems: 'center',
+  },
+  overviewNumber: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.textDark,
+    marginTop: 6,
+  },
+  overviewPercent: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textDark,
+  },
+  overviewLabel: {
+    fontSize: 11,
+    color: COLORS.textDark,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  overviewSubLabel: {
+    fontSize: 10,
+    color: COLORS.textGray,
+  },
+  darkSheet: {
+    backgroundColor: COLORS.bgDark,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    marginTop: -4,
+  },
+  journeyHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  journeyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textWhite,
+  },
+  newJourneyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.green,
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  newJourneyText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textDark,
+    marginLeft: 2,
+  },
+  journeyLoading: {
+    height: 140,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 20,
+    marginBottom: 24,
   },
-
-  avatarEmoji: {
-    fontSize: 30,
+  journeyCard: {
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 24,
   },
-
-  informacoesNivel: {
-    flex: 1,
+  journeyCardEmpty: {
+    alignItems: 'center',
+    paddingVertical: 28,
+    gap: 8,
   },
-
-  textoNivel: {
-    fontSize: 21,
-    fontWeight: 'bold',
-    color: '#1A1040',
-  },
-
-  textoXP: {
-    fontSize: 14,
-    color: '#7C6FAE',
+  emptyJourneyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textWhite,
+    textAlign: 'center',
     marginTop: 4,
   },
-
-  /* BARRA DE XP */
-
-  barraFundo: {
-    width: '100%',
-    height: 12,
-    backgroundColor: '#E8E5F5',
-    borderRadius: 10,
-    marginTop: 20,
-    overflow: 'hidden',
+  emptyJourneySubtitle: {
+    fontSize: 13,
+    color: COLORS.textWhiteMuted,
+    textAlign: 'center',
+    marginBottom: 4,
   },
-
-  barraXP: {
-    height: '100%',
-    backgroundColor: '#6C4CFF',
-    borderRadius: 10,
-  },
-
-  porcentagem: {
-    fontSize: 12,
-    color: '#7C6FAE',
-    marginTop: 8,
-    textAlign: 'right',
-  },
-
-  /* ÁREAS */
-
-  subtitulo: {
-    fontSize: 16,
-    color: '#7C6FAE',
-    marginBottom: 15,
-  },
-
-  listaAreas: {
-    gap: 12,
-  },
-
-  botaoArea: {
-    backgroundColor: '#FFFFFF',
-    padding: 17,
-    borderRadius: 16,
-
+  emptyJourneyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-
-    borderWidth: 1,
-    borderColor: '#E7E3FF',
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 4,
   },
-
-  iconeContainer: {
+  emptyJourneyBtnText: {
+    color: COLORS.green,
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  journeyCardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  bookmarkIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arrowBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  journeyCardBody: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginTop: 14,
+  },
+  journeyName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.textWhite,
+  },
+  journeyTags: {
+    fontSize: 12,
+    color: COLORS.textWhiteMuted,
+    marginTop: 2,
+  },
+  journeyTasksCount: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.textWhite,
+    marginTop: 10,
+  },
+  journeyDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  journeyDate: {
+    fontSize: 12,
+    color: COLORS.textWhiteMuted,
+    marginLeft: 5,
+  },
+  journeyPercent: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.textWhite,
+  },
+  nextTasksTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textWhite,
+    marginBottom: 12,
+  },
+  emptyTasksContainer: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    gap: 8,
+  },
+  emptyTasksText: {
+    fontSize: 14,
+    color: COLORS.textGray,
+    textAlign: 'center',
+  },
+  tabBar: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
+    backgroundColor: '#1C1C1E',
+    borderRadius: 28,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  tabItem: {
+    alignItems: 'center',
+  },
+  tabLabel: {
+    fontSize: 10,
+    color: COLORS.textGray,
+    marginTop: 2,
+  },
+  tabCenterWrapper: {
+    marginTop: -28,
+  },
+  tabCenterCircle: {
     width: 52,
     height: 52,
-    borderRadius: 14,
-    backgroundColor: '#F0EDFF',
-
-    justifyContent: 'center',
+    borderRadius: 26,
     alignItems: 'center',
-
-    marginRight: 15,
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: COLORS.bgDark,
   },
-
-  icone: {
-    fontSize: 27,
-  },
-
-  textoAreaContainer: {
-    flex: 1,
-  },
-
-  nomeArea: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#1A1040',
-  },
-
-  descricaoArea: {
-    fontSize: 13,
-    color: '#8C82B3',
-    marginTop: 3,
-  },
-
-  seta: {
-    fontSize: 28,
-    color: '#6C4CFF',
+  tabCenterLetter: {
+    color: COLORS.textWhite,
+    fontWeight: '800',
+    fontSize: 20,
   },
 });

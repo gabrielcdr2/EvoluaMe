@@ -21,6 +21,10 @@ export default function RootLayout() {
       <Stack initialRouteName="welcome">
         <Stack.Screen name="welcome" options={{ headerShown: false }} />
 
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+
+        <Stack.Screen name="cadastro" options={{ headerShown: false }} />
+
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
         <Stack.Screen name="atividades" options={{ headerShown: false }} />

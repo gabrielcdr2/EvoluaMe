@@ -1,84 +1,109 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Image, 
-  KeyboardAvoidingView, 
-  Platform 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { loginAPI } from '../services/api';
+import { salvarSessao } from '../hooks/useAuth';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState('');
   const router = useRouter();
 
-  const handleLogin = () => {
-    // Adicione a lógica de autenticação aqui
-    // Exemplo de navegação após login:
-    router.replace('/(tabs)/home');
+  const handleLogin = async () => {
+    setErro('');
+    if (!email.trim() || !password.trim()) {
+      setErro('Preencha o email e a senha para continuar.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const data = await loginAPI(email.trim(), password);
+      await salvarSessao(data.token, data.usuario);
+      router.replace('/(tabs)/home');
+    } catch (err: any) {
+      setErro(err.message ?? 'Email ou senha incorretos.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRegister = () => {
-    // Adicione a lógica de redirecionamento para o cadastro aqui
+    router.push('/cadastro');
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
       {/* Forma verde de fundo decorativa */}
       <View style={styles.backgroundShape} />
 
       {/* Logo */}
-      <Image 
-        // Substitua pelo caminho correto da sua logo no seu projeto
-        source={require('../assets/images/logo.png')} 
-        style={styles.logo} 
-        resizeMode="contain" 
+      <Image
+        source={require('../assets/images/logo.png')}
+        style={styles.logo}
+        resizeMode="contain"
       />
 
       {/* Card de Login */}
       <View style={styles.card}>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Email</Text>
-          <TextInput 
-            style={styles.input} 
-            placeholder="Email" 
+          <TextInput
+            style={[styles.input, erro ? styles.inputError : null]}
+            placeholder="Email"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(v) => { setEmail(v); setErro(''); }}
             keyboardType="email-address"
             autoCapitalize="none"
           />
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Password</Text>
-          <TextInput 
-            style={styles.input} 
-            placeholder="Password" 
+          <Text style={styles.label}>Senha</Text>
+          <TextInput
+            style={[styles.input, erro ? styles.inputError : null]}
+            placeholder="Senha"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(v) => { setPassword(v); setErro(''); }}
             secureTextEntry
           />
         </View>
 
+        {/* Mensagem de erro inline */}
+        {!!erro && (
+          <View style={styles.erroContainer}>
+            <Ionicons name="alert-circle-outline" size={16} color="#E53E3E" />
+            <Text style={styles.erroText}>{erro}</Text>
+          </View>
+        )}
+
         {/* Checkbox Lembrar Senha */}
-        <TouchableOpacity 
-          style={styles.checkboxContainer} 
+        <TouchableOpacity
+          style={styles.checkboxContainer}
           onPress={() => setRemember(!remember)}
           activeOpacity={0.7}
         >
-          <Ionicons 
-            name={remember ? "checkbox" : "square-outline"} 
-            size={24} 
-            color="#333" 
+          <Ionicons
+            name={remember ? 'checkbox' : 'square-outline'}
+            size={24}
+            color="#333"
           />
           <View style={styles.checkboxTexts}>
             <Text style={styles.checkboxLabel}>Lembrar senha?</Text>
@@ -86,13 +111,22 @@ export default function LoginScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* Botões */}
-        <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Entrar</Text>
+        {/* Botão Entrar */}
+        <TouchableOpacity
+          style={[styles.primaryButton, loading && styles.buttonDisabled]}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Entrar</Text>
+          )}
         </TouchableOpacity>
 
+        {/* Botão Registrar */}
         <TouchableOpacity style={styles.secondaryButton} onPress={handleRegister}>
-          <Text style={styles.buttonText}>Registrar</Text>
+          <Text style={styles.buttonText}>Criar conta</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -113,7 +147,7 @@ const styles = StyleSheet.create({
     left: -150,
     width: 500,
     height: 500,
-    backgroundColor: '#20C997', // Verde similar ao da imagem
+    backgroundColor: '#20C997',
     transform: [{ rotate: '45deg' }],
     zIndex: 0,
   },
@@ -154,6 +188,27 @@ const styles = StyleSheet.create({
     color: '#333',
     backgroundColor: '#FAFAFA',
   },
+  inputError: {
+    borderColor: '#E53E3E',
+    backgroundColor: '#FFF5F5',
+  },
+  erroContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF5F5',
+    borderWidth: 1,
+    borderColor: '#FED7D7',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+    gap: 6,
+  },
+  erroText: {
+    color: '#E53E3E',
+    fontSize: 13,
+    flex: 1,
+  },
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -184,6 +239,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     color: '#fff',

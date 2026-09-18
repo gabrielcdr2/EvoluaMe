@@ -1,6 +1,44 @@
 // Centraliza todas as chamadas HTTP para a API do EvoluaMe
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:3000';
 
+// ─── Auth ─────────────────────────────────────────────────────
+
+export interface UsuarioInfo {
+  id: string;
+  nome: string;
+  email: string;
+  nivelGlobal: number;
+  xpTotal: number;
+}
+
+export interface AuthResponse {
+  mensagem: string;
+  token: string;
+  usuario: UsuarioInfo;
+}
+
+export async function loginAPI(email: string, senha: string): Promise<AuthResponse> {
+  const res = await fetch(`${BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, senha }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.erro ?? 'Erro ao fazer login');
+  return data;
+}
+
+export async function cadastroAPI(nome: string, email: string, senha: string): Promise<AuthResponse> {
+  const res = await fetch(`${BASE_URL}/api/auth/cadastro`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nome, email, senha }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.erro ?? 'Erro ao cadastrar');
+  return data;
+}
+
 // ─── Atividades ──────────────────────────────────────────────
 
 export async function buscarAtividades(usuarioId: string, area?: string) {
@@ -46,4 +84,49 @@ export async function concluirAtividadeAPI(usuarioId: string, atividadeId: strin
   });
   if (!res.ok) throw new Error('Erro ao concluir atividade');
   return res.json();
+}
+
+// ─── Jornadas ─────────────────────────────────────────────────
+
+export interface Jornada {
+  _id: string;
+  titulo: string;
+  categoria: string;
+  nivelJornada: number;
+  xpJornada: number;
+  status: 'Ativa' | 'Pausada' | 'Concluída';
+  createdAt: string;
+}
+
+export interface Tarefa {
+  _id: string;
+  jornadaId: string;
+  titulo: string;
+  descricao?: string;
+  xpRecompensa: number;
+  status: 'Pendente' | 'Aguardando Validação' | 'Concluída';
+  urlComprovante?: string | null;
+  dataConclusao?: string | null;
+}
+
+export async function buscarJornadaAtiva(token: string): Promise<{ jornada: Jornada | null; tarefas: Tarefa[] }> {
+  const res = await fetch(`${BASE_URL}/api/jornadas/ativa`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Erro ao buscar jornada ativa');
+  return res.json();
+}
+
+export async function criarJornada(token: string, titulo: string, categoria: string): Promise<Jornada> {
+  const res = await fetch(`${BASE_URL}/api/jornadas`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ titulo, categoria }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.erro ?? 'Erro ao criar jornada');
+  return data;
 }
