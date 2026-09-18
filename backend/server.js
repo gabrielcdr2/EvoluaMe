@@ -14,11 +14,30 @@ const PORT = process.env.PORT || 3000;
 
 // ─── Middlewares ────────────────────────────────────────────
 app.use(express.json());
+
+// Origens sempre permitidas (além das definidas em CORS_ORIGINS)
+const ORIGENS_EXTRA = [/\.vercel\.app$/, /localhost/];
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGINS
-      ? process.env.CORS_ORIGINS.split(',')
-      : '*',
+    origin: (origin, callback) => {
+      // Permite requisições sem origin (ex: mobile, Postman)
+      if (!origin) return callback(null, true);
+
+      // Checa origens explícitas da variável de ambiente
+      const lista = process.env.CORS_ORIGINS
+        ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
+        : [];
+
+      if (lista.includes(origin)) return callback(null, true);
+
+      // Checa padrões extras (qualquer subdomínio vercel.app e localhost)
+      const permitido = ORIGENS_EXTRA.some((padrao) => padrao.test(origin));
+      if (permitido) return callback(null, true);
+
+      callback(new Error(`CORS bloqueado: ${origin}`));
+    },
+    credentials: true,
   })
 );
 
