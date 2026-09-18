@@ -230,8 +230,24 @@ export default function HomeScreen() {
             </LinearGradient>
           )}
 
-          {/* Próximas Tarefas */}
-          <Text style={styles.nextTasksTitle}>Próximas Tarefas</Text>
+          {/* Próximas Tarefas + botão */}
+          <View style={styles.tarefasHeaderRow}>
+            <Text style={styles.nextTasksTitle}>Próximas Tarefas</Text>
+            {jornada && (
+              <TouchableOpacity
+                style={styles.newTaskBtn}
+                onPress={() =>
+                  router.push({
+                    pathname: '/nova-tarefa',
+                    params: { jornadaId: jornada._id, jornadaTitulo: jornada.titulo },
+                  })
+                }
+              >
+                <Ionicons name="add" size={16} color={COLORS.textDark} />
+                <Text style={styles.newTaskText}>Nova tarefa</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           {!jornada ? (
             /* Nenhuma jornada: aviso abaixo do título */
@@ -532,7 +548,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: COLORS.textWhite,
+  },
+  tarefasHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
+  },
+  newTaskBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.green,
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  newTaskText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textDark,
+    marginLeft: 2,
   },
   emptyTasksContainer: {
     alignItems: 'center',

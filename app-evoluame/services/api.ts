@@ -130,3 +130,23 @@ export async function criarJornada(token: string, titulo: string, categoria: str
   if (!res.ok) throw new Error(data.erro ?? 'Erro ao criar jornada');
   return data;
 }
+
+export async function criarTarefa(
+  token: string,
+  jornadaId: string,
+  titulo: string,
+  descricao: string,
+  xpRecompensa: number
+): Promise<Tarefa> {
+  const res = await fetch(`${BASE_URL}/api/tarefas`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ jornadaId, titulo, descricao, xpRecompensa }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.erro ?? 'Erro ao criar tarefa');
+  return data;
+}
