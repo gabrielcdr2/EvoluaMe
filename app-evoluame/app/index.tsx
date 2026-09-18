@@ -25,7 +25,7 @@ export default function LoginScreen() {
   };
 
   const handleRegister = () => {
-    // Adicione a lógica de redirecionamento para o cadastro aqui
+    router.push('/cadastro')
   };
 
   return (
@@ -59,10 +59,10 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Password</Text>
+          <Text style={styles.label}>Senha</Text>
           <TextInput 
             style={styles.input} 
-            placeholder="Password" 
+            placeholder="Senha" 
             value={password}
             onChangeText={setPassword}
             secureTextEntry

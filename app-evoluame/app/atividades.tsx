@@ -705,7 +705,7 @@ const styles =
     container: {
       flex: 1,
       backgroundColor:
-        "#F5F4FF",
+        "#faf9fc",
     },
 
     conteudo: {
@@ -719,7 +719,7 @@ const styles =
     },
 
     voltarTexto: {
-      color: "#6C4CFF",
+      color: "#010007",
       fontSize: 16,
       fontWeight: "700",
     },
@@ -767,7 +767,7 @@ const styles =
 
     botao: {
       backgroundColor:
-        "#6C4CFF",
+        "#20C997",
       padding: 16,
       borderRadius: 14,
       alignItems: "center",
@@ -789,7 +789,7 @@ const styles =
     },
 
     mensagemTexto: {
-      color: "#4B32C3",
+      color: "#000a07",
       fontWeight: "bold",
       textAlign: "center",
       fontSize: 15,
@@ -798,7 +798,7 @@ const styles =
     tituloLista: {
       fontSize: 20,
       fontWeight: "bold",
-      color: "#1A1040",
+      color: "#000504",
       marginTop: 30,
       marginBottom: 15,
     },
@@ -812,7 +812,7 @@ const styles =
 
     cardDesafio: {
       backgroundColor:
-        "#FFFFFF",
+        "#20C997",
       padding: 18,
       marginBottom: 12,
       borderRadius: 16,
@@ -822,7 +822,7 @@ const styles =
     },
 
     tipoDesafio: {
-      color: "#6C4CFF",
+      color: "#20C997",
       fontSize: 12,
       fontWeight: "bold",
       marginBottom: 6,
@@ -831,7 +831,7 @@ const styles =
     nomeDesafio: {
       fontSize: 18,
       fontWeight: "bold",
-      color: "#1A1040",
+      color: "#20C997",
     },
 
     recompensa: {
@@ -843,7 +843,7 @@ const styles =
 
     botaoConcluir: {
       backgroundColor:
-        "#6C4CFF",
+        "#20C997",
       padding: 13,
       borderRadius: 10,
       alignItems: "center",
@@ -886,14 +886,14 @@ const styles =
     },
 
     climaDescricao: {
-      color: "#7C6FAE",
+      color: "#02000a",
       fontSize: 14,
       marginBottom: 14,
     },
 
     botaoClima: {
       backgroundColor:
-        "#6C4CFF",
+        "#20C997",
       padding: 14,
       borderRadius: 12,
       alignItems: "center",
@@ -911,7 +911,7 @@ const styles =
     cidadeClima: {
       fontWeight: "bold",
       fontSize: 15,
-      color: "#1A1040",
+      color: "#03010c",
       marginBottom: 10,
     },
 
@@ -932,18 +932,18 @@ const styles =
     recomendacaoTitulo: {
       fontSize: 17,
       fontWeight: "bold",
-      color: "#4B32C3",
+      color: "#020107",
       marginBottom: 8,
     },
 
     recomendacaoTexto: {
       fontSize: 16,
-      color: "#1A1040",
+      color: "#010005",
       lineHeight: 22,
     },
 
     recompensaRecomendada: {
-      color: "#7C6FAE",
+      color: "#6d6b75",
       fontSize: 14,
       marginTop: 10,
       marginBottom: 12,
@@ -951,7 +951,7 @@ const styles =
 
     botaoAdicionarRecomendacao: {
       backgroundColor:
-        "#6C4CFF",
+        "#20C997",
       padding: 13,
       borderRadius: 10,
       alignItems: "center",

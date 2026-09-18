@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 25,
-    backgroundColor: '#F5F4FF',
+    backgroundColor: '#1f11b8',
   },
 
   logo: {
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
 
   subtitulo: {
     fontSize: 16,
-    color: '#7C6FAE',
+    color: '#2900cf',
     textAlign: 'center',
     marginTop: 5,
     marginBottom: 50,
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   titulo: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1A1040',
+    color: '#bbb807',
     marginBottom: 20,
   },
 
