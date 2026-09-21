@@ -122,13 +122,24 @@ router.patch('/:id/concluir', autenticar, async (req, res) => {
       }
 
       // Chama o Evo (Gemini)
-      const resultadoEvo = await validarEGerarFeedback(
-        tarefa.jornadaId.titulo,
-        tarefa.titulo,
-        tarefa.descricao,
-        descricaoUsuario,
-        base64Imagem
-      );
+      let resultadoEvo;
+      try {
+        resultadoEvo = await validarEGerarFeedback(
+          tarefa.jornadaId.titulo,
+          tarefa.titulo,
+          tarefa.descricao,
+          descricaoUsuario,
+          base64Imagem
+        );
+      } catch (evoError) {
+        console.error("Falha ao comunicar com Evo, usando fallback:", evoError.message);
+        resultadoEvo = {
+          aprovado: false,
+          mensagem_mentor: "Infelizmente meu sistema falhou ou eu não consegui compreender sua imagem agora. Pode tentar de novo?",
+          motivo_reprovacao: "Falha de conexão com a API de IA ou sobrecarga nos servidores.",
+          sugestao_xp_extra: 0
+        };
+      }
 
       // Salva o feedback
       const feedback = await FeedbackEvo.create({
