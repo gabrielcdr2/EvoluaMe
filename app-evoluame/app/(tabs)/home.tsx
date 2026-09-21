@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   StatusBar,
   SafeAreaView,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -19,7 +20,8 @@ import { router, useFocusEffect } from 'expo-router';
 import CircularProgress from '../../components/CircularProgress';
 import TaskItem from '../../components/TaskItem';
 import { useAuth } from '../../hooks/useAuth';
-import { buscarJornadaAtiva, Jornada, Tarefa } from '../../services/api';
+import { salvarSessao } from '../../hooks/useAuth';
+import { buscarJornadaAtiva, concluirTarefa, Jornada, Tarefa } from '../../services/api';
 
 // ---------- Cores ----------
 const COLORS = {
@@ -43,6 +45,11 @@ export default function HomeScreen() {
   const [jornada, setJornada] = useState<Jornada | null>(null);
   const [tarefas, setTarefas] = useState<Tarefa[]>([]);
   const [carregandoJornada, setCarregandoJornada] = useState(false);
+  const [toast, setToast] = useState<{ mensagem: string; visivel: boolean }>({
+    mensagem: '',
+    visivel: false,
+  });
+  const toastAnim = React.useRef(new Animated.Value(0)).current;
 
   const nivel = usuario?.nivelGlobal ?? 1;
   const xp = usuario?.xpTotal ?? 0;
@@ -72,6 +79,35 @@ export default function HomeScreen() {
       console.log('Erro ao carregar jornada:', error);
     } finally {
       setCarregandoJornada(false);
+    }
+  }
+
+  function mostrarToast(mensagem: string) {
+    setToast({ mensagem, visivel: true });
+    Animated.sequence([
+      Animated.timing(toastAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.delay(2200),
+      Animated.timing(toastAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start(() => setToast({ mensagem: '', visivel: false }));
+  }
+
+  async function handleConcluirTarefa(tarefaId: string) {
+    if (!token || !usuario) return;
+    try {
+      const resultado = await concluirTarefa(token, tarefaId);
+      // Atualiza a tarefa localmente (mostra como concluída imediatamente)
+      setTarefas((prev) =>
+        prev.map((t) => (t._id === tarefaId ? { ...t, status: 'Concluída' as const, dataConclusao: new Date().toISOString() } : t))
+      );
+      // Atualiza a sessão local com o novo XP e nível
+      await salvarSessao(token, {
+        ...usuario,
+        xpTotal: resultado.novoXpTotal,
+        nivelGlobal: resultado.novoNivel,
+      });
+      mostrarToast(resultado.mensagem);
+    } catch (error: any) {
+      mostrarToast(error.message ?? 'Erro ao concluir tarefa');
     }
   }
 
@@ -267,8 +303,10 @@ export default function HomeScreen() {
               <TaskItem
                 key={t._id}
                 title={t.titulo}
-                date={t.dataConclusao ? 'Concluída' : 'Pendente'}
-                inProgress={t.status === 'Aguardando Validação'}
+                date={t.dataConclusao ? new Date(t.dataConclusao).toLocaleDateString('pt-BR') : 'Pendente'}
+                xpRecompensa={t.xpRecompensa}
+                concluida={t.status === 'Concluída'}
+                onComplete={() => handleConcluirTarefa(t._id)}
               />
             ))
           )}
@@ -276,6 +314,26 @@ export default function HomeScreen() {
           <View style={{ height: 100 }} />
         </View>
       </ScrollView>
+
+      {/* ---------- Toast de XP ---------- */}
+      {toast.visivel && (
+        <Animated.View
+          style={[
+            styles.toast,
+            {
+              opacity: toastAnim,
+              transform: [{
+                translateY: toastAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [20, 0],
+                }),
+              }],
+            },
+          ]}
+        >
+          <Text style={styles.toastText}>{toast.mensagem}</Text>
+        </Animated.View>
+      )}
 
       {/* ---------- Barra de navegação inferior ---------- */}
       <View style={styles.tabBar}>
@@ -325,7 +383,7 @@ const styles = StyleSheet.create({
   },
   safeAreaTop: {
     flex: 1,
-    backgroundColor: COLORS.bgLight,
+    backgroundColor: COLORS.bgDark,
   },
   header: {
     backgroundColor: COLORS.bgLight,
@@ -620,5 +678,27 @@ const styles = StyleSheet.create({
     color: COLORS.textWhite,
     fontWeight: '800',
     fontSize: 20,
+  },
+  toast: {
+    position: 'absolute',
+    bottom: 100,
+    alignSelf: 'center',
+    backgroundColor: '#1C1C1E',
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(47,217,141,0.4)',
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 10,
+  },
+  toastText: {
+    color: COLORS.textWhite,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

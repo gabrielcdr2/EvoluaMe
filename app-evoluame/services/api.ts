@@ -150,3 +150,28 @@ export async function criarTarefa(
   if (!res.ok) throw new Error(data.erro ?? 'Erro ao criar tarefa');
   return data;
 }
+
+export interface ConcluirTarefaResponse {
+  tarefa: Tarefa;
+  xpGanho: number;
+  subiuDeNivel: boolean;
+  novoNivel: number;
+  novoXpTotal: number;
+  mensagem: string;
+}
+
+export async function concluirTarefa(
+  token: string,
+  tarefaId: string
+): Promise<ConcluirTarefaResponse> {
+  const res = await fetch(`${BASE_URL}/api/tarefas/${tarefaId}/concluir`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.erro ?? 'Erro ao concluir tarefa');
+  return data;
+}
