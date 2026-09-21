@@ -13,7 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ─── Middlewares ────────────────────────────────────────────
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Origens sempre permitidas (além das definidas em CORS_ORIGINS)
 const ORIGENS_EXTRA = [/\.vercel\.app$/, /localhost/];

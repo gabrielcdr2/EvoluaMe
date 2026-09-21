@@ -22,6 +22,10 @@ const TarefaSchema = new mongoose.Schema(
       required: true,
       default: 10, // Um valor padrão, caso não seja preenchido
     },
+    requerAnexo: {
+      type: Boolean,
+      default: false,
+    },
     status: {
       type: String,
       enum: ['Pendente', 'Aguardando Validação', 'Concluída'],

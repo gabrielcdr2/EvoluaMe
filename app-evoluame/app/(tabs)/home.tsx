@@ -306,7 +306,9 @@ export default function HomeScreen() {
                 date={t.dataConclusao ? new Date(t.dataConclusao).toLocaleDateString('pt-BR') : 'Pendente'}
                 xpRecompensa={t.xpRecompensa}
                 concluida={t.status === 'Concluída'}
+                requerAnexo={t.requerAnexo}
                 onComplete={() => handleConcluirTarefa(t._id)}
+                onNavigate={() => router.push(`/tarefa/${t._id}` as any)}
               />
             ))
           )}

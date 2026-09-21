@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Switch,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -42,6 +43,7 @@ export default function NovaTarefaScreen() {
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescricao] = useState('');
   const [xpRecompensa, setXpRecompensa] = useState(25);
+  const [requerAnexo, setRequerAnexo] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [tituloFocado, setTituloFocado] = useState(false);
@@ -56,7 +58,7 @@ export default function NovaTarefaScreen() {
 
     try {
       setLoading(true);
-      await criarTarefa(token, jornadaId, titulo.trim(), descricao.trim(), xpRecompensa);
+      await criarTarefa(token, jornadaId, titulo.trim(), descricao.trim(), xpRecompensa, requerAnexo);
       router.back();
     } catch (err: any) {
       Alert.alert('Erro', err.message ?? 'Não foi possível criar a tarefa.');
@@ -204,6 +206,31 @@ export default function NovaTarefaScreen() {
               <Text style={styles.xpInfo}>
                 Você ganhará <Text style={{ color: COLORS.green, fontWeight: '700' }}>+{xpRecompensa} XP</Text> ao concluir esta tarefa
               </Text>
+            </View>
+          </View>
+
+          {/* ── Step 4: Comprovação ── */}
+          <View style={styles.section}>
+            <View style={styles.stepRow}>
+              <View style={styles.stepDot}>
+                <Text style={styles.stepNum}>4</Text>
+              </View>
+              <Text style={styles.stepLabel}>Requerer Comprovação</Text>
+            </View>
+
+            <View style={styles.comprovacaoCard}>
+              <View style={{ flex: 1, paddingRight: 16 }}>
+                <Text style={styles.comprovacaoTitle}>Validar com Evo AI</Text>
+                <Text style={styles.comprovacaoDesc}>
+                  O usuário precisará enviar uma foto e/ou texto relatando a experiência. O Evo (nossa IA) avaliará se a tarefa foi cumprida.
+                </Text>
+              </View>
+              <Switch
+                value={requerAnexo}
+                onValueChange={setRequerAnexo}
+                trackColor={{ false: '#3A3A3D', true: COLORS.green }}
+                thumbColor={COLORS.white}
+              />
             </View>
           </View>
 
@@ -439,5 +466,27 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 16,
     fontWeight: '700',
+  },
+
+  // ── Comprovação ─────────────────────────────────
+  comprovacaoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    padding: 16,
+  },
+  comprovacaoTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.white,
+    marginBottom: 4,
+  },
+  comprovacaoDesc: {
+    fontSize: 12,
+    color: COLORS.gray,
+    lineHeight: 16,
   },
 });

@@ -21,7 +21,9 @@ interface TaskItemProps {
   date: string;
   xpRecompensa?: number;
   concluida?: boolean;
+  requerAnexo?: boolean;
   onComplete?: () => void;
+  onNavigate?: () => void;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
@@ -29,31 +31,48 @@ const TaskItem: React.FC<TaskItemProps> = ({
   date,
   xpRecompensa,
   concluida = false,
+  requerAnexo = false,
   onComplete,
+  onNavigate,
 }) => {
   const scale = useRef(new Animated.Value(1)).current;
 
   function handlePress() {
-    if (concluida || !onComplete) return;
-    Animated.sequence([
-      Animated.timing(scale, { toValue: 0.85, duration: 100, useNativeDriver: true }),
-      Animated.timing(scale, { toValue: 1, duration: 150, useNativeDriver: true }),
-    ]).start(() => onComplete());
+    if (concluida) return;
+    
+    if (requerAnexo && onNavigate) {
+      onNavigate();
+      return;
+    }
+
+    if (onComplete) {
+      Animated.sequence([
+        Animated.timing(scale, { toValue: 0.85, duration: 100, useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1, duration: 150, useNativeDriver: true }),
+      ]).start(() => onComplete());
+    }
   }
 
   return (
-    <View style={[styles.taskCard, concluida && styles.taskCardDone]}>
-      {/* Botão circular de completar */}
+    <TouchableOpacity
+      activeOpacity={requerAnexo && !concluida ? 0.7 : 1}
+      onPress={requerAnexo && !concluida ? handlePress : undefined}
+      style={[styles.taskCard, concluida && styles.taskCardDone]}
+    >
+      {/* Botão circular de completar ou ícone de IA */}
       <TouchableOpacity onPress={handlePress} disabled={concluida} activeOpacity={0.7}>
         <Animated.View
           style={[
             styles.checkCircle,
             concluida && styles.checkCircleDone,
+            requerAnexo && !concluida && styles.checkCircleEvo,
             { transform: [{ scale }] },
           ]}
         >
           {concluida ? (
             <Ionicons name="checkmark" size={16} color="#fff" />
+          ) : requerAnexo ? (
+            <Ionicons name="hardware-chip-outline" size={16} color={COLORS.green} />
           ) : (
             <View style={styles.checkInner} />
           )}
@@ -79,10 +98,10 @@ const TaskItem: React.FC<TaskItemProps> = ({
       {/* Pílula de status */}
       <View style={[styles.statusPill, concluida && styles.statusPillDone]}>
         <Text style={[styles.statusText, concluida && styles.statusTextDone]}>
-          {concluida ? 'Feito' : 'Pendente'}
+          {concluida ? 'Feito' : (requerAnexo ? 'Requer IA' : 'Pendente')}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -112,6 +131,10 @@ const styles = StyleSheet.create({
   checkCircleDone: {
     backgroundColor: COLORS.green,
     borderColor: COLORS.green,
+  },
+  checkCircleEvo: {
+    borderColor: 'rgba(47,217,141,0.5)',
+    backgroundColor: 'rgba(47,217,141,0.1)',
   },
   checkInner: {
     width: 10,

@@ -107,6 +107,7 @@ export interface Tarefa {
   status: 'Pendente' | 'Aguardando Validação' | 'Concluída';
   urlComprovante?: string | null;
   dataConclusao?: string | null;
+  requerAnexo?: boolean;
 }
 
 export async function buscarJornadaAtiva(token: string): Promise<{ jornada: Jornada | null; tarefas: Tarefa[] }> {
@@ -136,7 +137,8 @@ export async function criarTarefa(
   jornadaId: string,
   titulo: string,
   descricao: string,
-  xpRecompensa: number
+  xpRecompensa: number,
+  requerAnexo: boolean = false
 ): Promise<Tarefa> {
   const res = await fetch(`${BASE_URL}/api/tarefas`, {
     method: 'POST',
@@ -144,25 +146,43 @@ export async function criarTarefa(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ jornadaId, titulo, descricao, xpRecompensa }),
+    body: JSON.stringify({ jornadaId, titulo, descricao, xpRecompensa, requerAnexo }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.erro ?? 'Erro ao criar tarefa');
   return data;
 }
 
+export interface FeedbackEvo {
+  _id: string;
+  tarefaId: string;
+  usuarioId: string;
+  descricaoEnviada: string;
+  urlImagem: string | null;
+  aprovado: boolean;
+  mensagemMentor: string;
+  motivoReprovacao: string;
+  xpExtra: number;
+  createdAt: string;
+}
+
 export interface ConcluirTarefaResponse {
   tarefa: Tarefa;
   xpGanho: number;
+  xpBase: number;
+  xpExtra: number;
   subiuDeNivel: boolean;
   novoNivel: number;
   novoXpTotal: number;
+  feedbacks?: FeedbackEvo[];
   mensagem: string;
 }
 
 export async function concluirTarefa(
   token: string,
-  tarefaId: string
+  tarefaId: string,
+  descricaoUsuario?: string,
+  base64Imagem?: string
 ): Promise<ConcluirTarefaResponse> {
   const res = await fetch(`${BASE_URL}/api/tarefas/${tarefaId}/concluir`, {
     method: 'PATCH',
@@ -170,8 +190,25 @@ export async function concluirTarefa(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
+    body: JSON.stringify({ descricaoUsuario, base64Imagem }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.erro ?? 'Erro ao concluir tarefa');
   return data;
+}
+
+export async function buscarFeedbacksEvo(token: string, tarefaId: string): Promise<FeedbackEvo[]> {
+  const res = await fetch(`${BASE_URL}/api/tarefas/${tarefaId}/feedbacks`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Erro ao buscar feedbacks');
+  return res.json();
+}
+
+export async function buscarTarefa(token: string, tarefaId: string): Promise<Tarefa> {
+  const res = await fetch(`${BASE_URL}/api/tarefas/${tarefaId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Erro ao buscar tarefa');
+  return res.json();
 }
