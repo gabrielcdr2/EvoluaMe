@@ -3,25 +3,25 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import {
+  AcessibilidadeProvider,
+  useAcessibilidade,
+} from "@/contexts/AcessibilidadeContext";
 
-export const unstable_settings = {
-  initialRouteName: "welcome",
-};
-
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+function Navegacao() {
+  const { tema } = useAcessibilidade();
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack initialRouteName="welcome">
-        <Stack.Screen name="welcome" options={{ headerShown: false }} />
-
+    <ThemeProvider value={tema === "dark" ? DarkTheme : DefaultTheme}>
+      <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
+
+        <Stack.Screen name="welcome" options={{ headerShown: false }} />
 
         <Stack.Screen name="cadastro" options={{ headerShown: false }} />
 
@@ -33,6 +33,10 @@ export default function RootLayout() {
 
         <Stack.Screen name="nova-tarefa" options={{ headerShown: false }} />
 
+        <Stack.Screen name="configuracoes" options={{ headerShown: false }} />
+
+        <Stack.Screen name="libras" options={{ headerShown: false }} />
+
         <Stack.Screen
           name="modal"
           options={{
@@ -42,7 +46,15 @@ export default function RootLayout() {
         />
       </Stack>
 
-      <StatusBar style="dark" />
+      <StatusBar style={tema === "dark" ? "light" : "dark"} />
     </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AcessibilidadeProvider>
+      <Navegacao />
+    </AcessibilidadeProvider>
   );
 }
