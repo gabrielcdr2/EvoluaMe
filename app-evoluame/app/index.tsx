@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { loginAPI } from "../services/api";
 import { salvarSessao } from "../hooks/useAuth";
+import { biometriaAtivada, confirmarBiometria } from "../services/biometria";
 import { useAcessibilidade } from "@/contexts/AcessibilidadeContext";
 
 export default function LoginScreen() {
@@ -62,9 +63,20 @@ export default function LoginScreen() {
 
       const data = await loginAPI(email.trim(), password);
 
-      await salvarSessao(data.token, data.usuario);
+      const exigeBiometria = await biometriaAtivada(data.usuario.id);
 
-      router.replace("/(tabs)/home");
+      if (exigeBiometria) {
+        const autenticado = await confirmarBiometria();
+
+        if (!autenticado) {
+          setErro(
+            "Confirmação biométrica não realizada. Acesso não autorizado.",
+          );
+          return;
+        }
+      }
+
+      await salvarSessao(data.token, data.usuario);
     } catch (err: any) {
       setErro(err?.message ?? "Email ou senha incorretos.");
     } finally {

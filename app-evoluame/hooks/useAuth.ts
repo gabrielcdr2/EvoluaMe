@@ -1,8 +1,21 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
 
-const TOKEN_KEY = '@evolua_token';
-const USUARIO_KEY = '@evolua_usuario';
+const TOKEN_KEY = "@evolua_token";
+const USUARIO_KEY = "@evolua_usuario";
+const ouvintesSessao = new Set<() => void>();
+
+export function avisarMudancaSessao() {
+  ouvintesSessao.forEach((ouvinte) => ouvinte());
+}
+
+export function observarSessao(ouvinte: () => void) {
+  ouvintesSessao.add(ouvinte);
+
+  return () => {
+    ouvintesSessao.delete(ouvinte);
+  };
+}
 
 export interface UsuarioSessao {
   id: string;
@@ -14,8 +27,12 @@ export interface UsuarioSessao {
 
 /** Salva token e dados do usuário após login/cadastro */
 export async function salvarSessao(token: string, usuario: UsuarioSessao) {
-  await AsyncStorage.setItem(TOKEN_KEY, token);
-  await AsyncStorage.setItem(USUARIO_KEY, JSON.stringify(usuario));
+  await AsyncStorage.multiSet([
+    [TOKEN_KEY, token],
+    [USUARIO_KEY, JSON.stringify(usuario)],
+  ]);
+
+  avisarMudancaSessao();
 }
 
 /** Remove token e dados (logout) */
@@ -47,7 +64,7 @@ export function useAuth() {
         setToken(tok);
         setUsuario(usuarioJson ? JSON.parse(usuarioJson) : null);
       } catch (e) {
-        console.log('Erro ao carregar sessão:', e);
+        console.log("Erro ao carregar sessão:", e);
       } finally {
         setCarregando(false);
       }

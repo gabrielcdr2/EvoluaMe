@@ -21,7 +21,7 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
-import { router, useFocusEffect } from "expo-router";
+import { Redirect, router, useFocusEffect } from "expo-router";
 
 import { useAcessibilidade } from "../../contexts/AcessibilidadeContext";
 
@@ -220,14 +220,8 @@ export default function HomeScreen() {
     return d.toLocaleDateString("pt-BR", { day: "numeric", month: "long" });
   }
 
-  if (carregandoAuth) {
-    return (
-      <View
-        style={[styles.loadingContainer, { backgroundColor: paleta.fundo }]}
-      >
-        <ActivityIndicator size="large" color={COLORS.green} />
-      </View>
-    );
+  if (!token || !usuario) {
+    return <Redirect href="/" />;
   }
 
   return (

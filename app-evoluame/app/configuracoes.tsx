@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -6,16 +6,117 @@ import {
   TouchableOpacity,
   View,
   Switch,
+  Alert,
+  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAcessibilidade } from "@/contexts/AcessibilidadeContext";
+import { useAuth } from "@/hooks/useAuth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as LocalAuthentication from "expo-local-authentication";
 
 const VERDE = "#2FD98D";
 
 export default function ConfiguracoesScreen() {
   const { tema, tamanhoFonte, alterarTema, aumentarFonte, diminuirFonte } =
     useAcessibilidade();
+  const { usuario, carregando: carregandoSessao } = useAuth();
+  const [biometriaAtiva, setBiometriaAtiva] = useState(false);
+  const [carregandoBiometria, setCarregandoBiometria] = useState(true);
+  const [processandoBiometria, setProcessandoBiometria] = useState(false);
+
+  // A preferência é local e isolada por ID da conta neste aparelho.
+  const chaveBiometria = usuario?.id ? `native:${usuario.id}` : null;
+
+  const carregarPreferencia = useCallback(async () => {
+    setCarregandoBiometria(true);
+    try {
+      if (Platform.OS === "web" || !chaveBiometria) {
+        setBiometriaAtiva(false);
+        return;
+      }
+      setBiometriaAtiva(
+        (await AsyncStorage.getItem(chaveBiometria)) === "true",
+      );
+    } catch {
+      setBiometriaAtiva(false);
+      Alert.alert(
+        "Erro",
+        "Não foi possível consultar a preferência biométrica.",
+      );
+    } finally {
+      setCarregandoBiometria(false);
+    }
+  }, [chaveBiometria]);
+
+  useEffect(() => {
+    void carregarPreferencia();
+  }, [carregarPreferencia]);
+
+  const alterarBiometria = async (ativar: boolean) => {
+    if (!chaveBiometria || Platform.OS === "web" || processandoBiometria)
+      return;
+    setProcessandoBiometria(true);
+    try {
+      if (!ativar) {
+        await AsyncStorage.removeItem(chaveBiometria);
+        setBiometriaAtiva(false);
+        Alert.alert(
+          "Biometria desativada",
+          "A entrada nativa foi desativada nesta conta e neste aparelho.",
+        );
+        return;
+      }
+
+      const temHardware = await LocalAuthentication.hasHardwareAsync();
+      if (!temHardware) {
+        Alert.alert(
+          "Biometria indisponível",
+          "Este aparelho não possui leitor biométrico compatível.",
+        );
+        return;
+      }
+      const cadastrada = await LocalAuthentication.isEnrolledAsync();
+      if (!cadastrada) {
+        Alert.alert(
+          "Biometria não cadastrada",
+          "Cadastre uma impressão digital nas configurações do aparelho antes de ativar.",
+        );
+        return;
+      }
+
+      const resultado = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Ativar entrada por biometria",
+        cancelLabel: "Cancelar",
+        disableDeviceFallback: false,
+      });
+      if (!resultado.success) {
+        if (
+          resultado.error !== "user_cancel" &&
+          resultado.error !== "system_cancel" &&
+          resultado.error !== "app_cancel"
+        ) {
+          Alert.alert(
+            "Não foi possível ativar",
+            "A confirmação biométrica não foi concluída.",
+          );
+        }
+        return;
+      }
+      await AsyncStorage.setItem(chaveBiometria, "true");
+      setBiometriaAtiva(true);
+      Alert.alert(
+        "Biometria ativada",
+        "Preferência salva para esta conta neste aparelho.",
+      );
+    } catch {
+      Alert.alert("Erro", "Não foi possível alterar a preferência biométrica.");
+    } finally {
+      setProcessandoBiometria(false);
+    }
+  };
+
   const escuro = tema === "dark";
   const cores = {
     fundo: escuro ? "#131313" : "#FFFFFF",
@@ -274,6 +375,70 @@ export default function ConfiguracoesScreen() {
         </View>
         <Ionicons name="chevron-forward" size={20} color={cores.secundario} />
       </TouchableOpacity>
+
+      <Text
+        style={[
+          styles.secao,
+          { color: cores.texto, fontSize: 17 * tamanhoFonte },
+        ]}
+        accessibilityRole="header"
+      >
+        Segurança
+      </Text>
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: cores.card, borderColor: cores.borda },
+        ]}
+      >
+        <View style={styles.linha}>
+          <View style={styles.linhaTexto}>
+            <View style={styles.icone}>
+              <Ionicons name="finger-print-outline" size={23} color="#161616" />
+            </View>
+            <View style={styles.textos}>
+              <Text
+                style={{
+                  color: cores.texto,
+                  fontSize: 16 * tamanhoFonte,
+                  fontWeight: "700",
+                }}
+              >
+                Entrada por biometria
+              </Text>
+              <Text
+                style={{
+                  color: cores.secundario,
+                  fontSize: 12 * tamanhoFonte,
+                  marginTop: 4,
+                }}
+              >
+                {Platform.OS === "web"
+                  ? "Disponível somente no aplicativo instalado no celular."
+                  : !usuario
+                    ? "Faça login para configurar a biometria desta conta."
+                    : "Confirme com sua digital para ativar neste aparelho."}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={biometriaAtiva}
+            onValueChange={(valor) => void alterarBiometria(valor)}
+            disabled={
+              Platform.OS === "web" ||
+              carregandoSessao ||
+              carregandoBiometria ||
+              processandoBiometria ||
+              !chaveBiometria
+            }
+            trackColor={{ false: "#C9C9CE", true: VERDE }}
+            thumbColor="#FFFFFF"
+            accessibilityRole="switch"
+            accessibilityLabel="Ativar ou desativar entrada por biometria"
+            accessibilityHint="Solicita confirmação biométrica ao ativar; a preferência é específica desta conta e deste aparelho"
+          />
+        </View>
+      </View>
 
       <View style={styles.rodape}>
         <Ionicons name="checkmark-circle" size={19} color={VERDE} />
