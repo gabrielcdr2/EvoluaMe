@@ -1,4 +1,6 @@
 import React, { useCallback, useRef, useState } from "react";
+import { useAudioPlayer } from "expo-audio";
+import { obterSonsAtivados } from "@/services/sons";
 
 import {
   View,
@@ -174,6 +176,10 @@ export default function HomeScreen() {
     ]).start(() => setToast({ mensagem: "", visivel: false }));
   }
 
+  const playerConclusao = useAudioPlayer(
+    require("../../assets/sounds/evento.wav"),
+  );
+
   async function handleConcluirTarefa(tarefaId: string) {
     if (!token || !usuario) return;
 
@@ -207,6 +213,18 @@ export default function HomeScreen() {
       });
 
       mostrarToast(resultado.mensagem);
+
+      // O som respeita a preferência das Configurações.
+      // Falhas no áudio não interferem na conclusão da tarefa.
+      try {
+        const sonsAtivados = await obterSonsAtivados();
+        if (sonsAtivados) {
+          await playerConclusao.seekTo(0);
+          playerConclusao.play();
+        }
+      } catch (erroAudio) {
+        console.log("Não foi possível reproduzir o som:", erroAudio);
+      }
     } catch (error: any) {
       mostrarToast(error.message ?? "Erro ao concluir tarefa");
     }

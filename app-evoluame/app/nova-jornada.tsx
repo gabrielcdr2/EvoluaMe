@@ -9,8 +9,6 @@ import {
   StatusBar,
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -152,14 +150,12 @@ export default function NovaJornadaScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
+      <View style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="none"
         >
           {/* Header */}
           <View style={styles.header}>
@@ -206,6 +202,7 @@ export default function NovaJornadaScreen() {
                 onBlur={() => setNomeFocado(false)}
                 maxLength={60}
                 returnKeyType="done"
+                autoCorrect={false}
               />
             </View>
             <Text style={styles.charCount}>{nome.length}/60</Text>
@@ -264,7 +261,7 @@ export default function NovaJornadaScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -355,11 +352,6 @@ const styles = StyleSheet.create({
   },
   inputWrapperFocused: {
     borderColor: COLORS.green,
-    shadowColor: COLORS.green,
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 4,
   },
   input: {
     flex: 1,

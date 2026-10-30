@@ -1,3 +1,4 @@
+import { obterSonsAtivados, salvarSonsAtivados } from "@/services/sons";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ScrollView,
@@ -25,7 +26,8 @@ export default function ConfiguracoesScreen() {
   const [biometriaAtiva, setBiometriaAtiva] = useState(false);
   const [carregandoBiometria, setCarregandoBiometria] = useState(true);
   const [processandoBiometria, setProcessandoBiometria] = useState(false);
-
+  const [sonsAtivados, setSonsAtivados] = useState(true);
+  const [carregandoSons, setCarregandoSons] = useState(true);
   // A preferência é local e isolada por ID da conta neste aparelho.
   const chaveBiometria = usuario?.id ? `native:${usuario.id}` : null;
 
@@ -116,7 +118,33 @@ export default function ConfiguracoesScreen() {
       setProcessandoBiometria(false);
     }
   };
+  useEffect(() => {
+    let ativo = true;
 
+    async function carregarSons() {
+      const preferencia = await obterSonsAtivados();
+
+      if (ativo) {
+        setSonsAtivados(preferencia);
+        setCarregandoSons(false);
+      }
+    }
+
+    void carregarSons();
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  async function alterarSons(ativar: boolean) {
+    try {
+      await salvarSonsAtivados(ativar);
+      setSonsAtivados(ativar);
+    } catch (erro) {
+      Alert.alert("Erro", "Não foi possível salvar a preferência de sons.");
+    }
+  }
   const escuro = tema === "dark";
   const cores = {
     fundo: escuro ? "#131313" : "#FFFFFF",
@@ -219,6 +247,69 @@ export default function ConfiguracoesScreen() {
             thumbColor="#FFFFFF"
             accessibilityLabel="Ativar ou desativar modo escuro"
             accessibilityRole="switch"
+          />
+        </View>
+      </View>
+
+      <Text
+        style={[
+          styles.secao,
+          { color: cores.texto, fontSize: 17 * tamanhoFonte },
+        ]}
+        accessibilityRole="header"
+      >
+        Sons e notificações
+      </Text>
+
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: cores.card, borderColor: cores.borda },
+        ]}
+      >
+        <View style={styles.linha}>
+          <View style={styles.linhaTexto}>
+            <View style={styles.icone}>
+              <Ionicons
+                name={
+                  sonsAtivados ? "volume-high-outline" : "volume-mute-outline"
+                }
+                size={22}
+                color="#161616"
+              />
+            </View>
+
+            <View style={styles.textos}>
+              <Text
+                style={{
+                  color: cores.texto,
+                  fontSize: 16 * tamanhoFonte,
+                  fontWeight: "700",
+                }}
+              >
+                Efeitos sonoros
+              </Text>
+
+              <Text
+                style={{
+                  color: cores.secundario,
+                  fontSize: 12 * tamanhoFonte,
+                  marginTop: 4,
+                }}
+              >
+                Reproduzir sons ao concluir tarefas
+              </Text>
+            </View>
+          </View>
+
+          <Switch
+            value={sonsAtivados}
+            onValueChange={(valor) => void alterarSons(valor)}
+            disabled={carregandoSons}
+            trackColor={{ false: "#C9C9CE", true: VERDE }}
+            thumbColor="#FFFFFF"
+            accessibilityRole="switch"
+            accessibilityLabel="Ativar ou desativar efeitos sonoros"
           />
         </View>
       </View>
