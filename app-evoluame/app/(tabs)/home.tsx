@@ -717,85 +717,102 @@ export default function HomeScreen() {
 
       {/* ---------- Barra de navegação inferior ---------- */}
 
-      <View style={styles.tabBar}>
-        <View
-          accessibilityRole="tab"
-          accessibilityLabel="Início"
-          accessibilityState={{ selected: true }}
-          style={styles.tabItem}
-        >
-          <Ionicons name="home" size={22} color={COLORS.green} />
 
+    <View style={styles.tabBar}>
+      {/* Início */}
+      <View
+        accessibilityRole="tab"
+        accessibilityLabel="Início"
+        accessibilityState={{ selected: true }}
+        style={styles.tabItem}
+      >
+        <Ionicons name="home" size={22} color={COLORS.green} />
+
+        <Text
+          style={[
+            styles.tabLabel,
+            { color: COLORS.green, fontSize: 10 * tamanhoFonte },
+          ]}
+        >
+          Início
+        </Text>
+      </View>
+
+      {/* Jornadas */}
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => router.push("/atividades")}
+        accessibilityRole="button"
+        accessibilityLabel="Jornadas"
+        accessibilityHint="Abre a tela de atividades e jornadas"
+      >
+        <MaterialCommunityIcons
+          name="compass-outline"
+          size={22}
+          color={COLORS.textGray}
+        />
+
+        <Text style={[styles.tabLabel, { fontSize: 10 * tamanhoFonte }]}>
+          Jornadas
+        </Text>
+      </TouchableOpacity>
+
+      {/* Logo central */}
+      <View accessible={false} style={styles.tabCenterWrapper}>
+        <LinearGradient
+          colors={[COLORS.green, "#0EA5E9"]}
+          style={styles.tabCenterCircle}
+        >
           <Text
             style={[
-              styles.tabLabel,
-
-              { color: COLORS.green },
-
-              { fontSize: 10 * tamanhoFonte },
+              styles.tabCenterLetter,
+              { fontSize: 20 * tamanhoFonte },
             ]}
           >
-            Início
+            E
           </Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => router.push("/atividades")}
-          accessibilityRole="button"
-          accessibilityLabel="Jornadas"
-          accessibilityHint="Abre a tela de atividades e jornadas"
-        >
-          <MaterialCommunityIcons
-            name="compass-outline"
-            size={22}
-            color={COLORS.textGray}
-          />
-
-          <Text style={[styles.tabLabel, { fontSize: 10 * tamanhoFonte }]}>
-            Jornadas
-          </Text>
-        </TouchableOpacity>
-
-        <View accessible={false} style={styles.tabCenterWrapper}>
-          <LinearGradient
-            colors={[COLORS.green, "#0EA5E9"]}
-            style={styles.tabCenterCircle}
-          >
-            <Text
-              style={[styles.tabCenterLetter, { fontSize: 20 * tamanhoFonte }]}
-            >
-              E
-            </Text>
-          </LinearGradient>
-        </View>
-
-        <View
-          accessible
-          accessibilityLabel="Perfil, funcionalidade ainda não disponível"
-          style={styles.tabItem}
-        >
-          <Ionicons name="person-outline" size={22} color={COLORS.textGray} />
-
-          <Text style={[styles.tabLabel, { fontSize: 10 * tamanhoFonte }]}>
-            Perfil
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => router.push("/configuracoes")}
-          accessibilityRole="button"
-          accessibilityLabel="Configurações de acessibilidade"
-          accessibilityHint="Abre as preferências de acessibilidade"
-        >
-          <Ionicons name="settings-outline" size={22} color={COLORS.textGray} />
-
-          <Text style={[styles.tabLabel, { fontSize: 10 * tamanhoFonte }]}>
-            Config.
-          </Text>
-        </TouchableOpacity>
+        </LinearGradient>
       </View>
+
+      {/* Amigos - substitui Perfil */}
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => router.push("/amigos")}
+        accessibilityRole="button"
+        accessibilityLabel="Amigos"
+        accessibilityHint="Abre a tela de amigos"
+      >
+        <Ionicons
+          name="people-outline"
+          size={22}
+          color={COLORS.textGray}
+        />
+
+        <Text style={[styles.tabLabel, { fontSize: 10 * tamanhoFonte }]}>
+          Amigos
+        </Text>
+      </TouchableOpacity>
+
+      {/* Configurações - acessibilidade preservada */}
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => router.push("/configuracoes")}
+        accessibilityRole="button"
+        accessibilityLabel="Configurações de acessibilidade"
+        accessibilityHint="Abre as preferências de acessibilidade"
+      >
+        <Ionicons
+          name="settings-outline"
+          size={22}
+          color={COLORS.textGray}
+        />
+
+        <Text style={[styles.tabLabel, { fontSize: 10 * tamanhoFonte }]}>
+          Config.
+        </Text>
+      </TouchableOpacity>
+    </View>
+
     </SafeAreaView>
   );
 }
