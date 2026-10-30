@@ -11,6 +11,8 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { getToken, limparSessao, observarSessao } from "../hooks/useAuth";
+import { registrarPushTokenAPI } from "../services/api";
+import { registrarNotificacoesPush } from "../services/notificacoes";
 
 import {
   AcessibilidadeProvider,
@@ -71,6 +73,40 @@ function Navegacao() {
       pararObservacao();
     };
   }, []);
+
+  // Registra o dispositivo para receber notificações push
+  // sempre que o usuário estiver autenticado.
+  useEffect(() => {
+    if (!autenticado) return;
+
+    let ativo = true;
+
+    async function prepararNotificacoes() {
+      try {
+        const pushToken = await registrarNotificacoesPush();
+
+        if (!ativo || !pushToken) return;
+
+        const token = await getToken();
+
+        if (!ativo || !token) return;
+
+        await registrarPushTokenAPI(token, pushToken);
+
+        if (!ativo) return;
+
+        console.log("Dispositivo registrado para notificações push!");
+      } catch (erro) {
+        console.log("Erro ao registrar dispositivo para notificações:", erro);
+      }
+    }
+
+    prepararNotificacoes();
+
+    return () => {
+      ativo = false;
+    };
+  }, [autenticado]);
 
   if (verificando) {
     return (

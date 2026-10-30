@@ -1,7 +1,11 @@
+
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+
+const notificacoesRoutes = require('./routes/notificacoes');
+const amizadesRoutes = require('./routes/amizades');
 
 const atividadesRoutes = require('./routes/atividades');
 const progressoRoutes = require('./routes/progresso');
@@ -51,6 +55,8 @@ app.use('/api/progresso', progressoRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/jornadas', jornadasRoutes);
 app.use('/api/tarefas', tarefasRoutes);
+app.use('/api/notificacoes', notificacoesRoutes);
+app.use('/api/amizades', amizadesRoutes);
 
 // ─── Banco de Dados ──────────────────────────────────────────
 async function conectarDB() {

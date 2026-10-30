@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 
 const UsuarioSchema = new mongoose.Schema(
@@ -31,6 +32,11 @@ const UsuarioSchema = new mongoose.Schema(
         xpTotal: {
             type: Number,
             default: 0,
+        },
+        expoPushTokens: {
+            type: [String],
+            default: [],
+            select: false,
         }
     },
     { timestamps: true }
