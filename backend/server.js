@@ -6,6 +6,7 @@ const cors = require('cors');
 
 const notificacoesRoutes = require('./routes/notificacoes');
 const amizadesRoutes = require('./routes/amizades');
+const chatRoutes = require('./routes/chat');
 
 const atividadesRoutes = require('./routes/atividades');
 const progressoRoutes = require('./routes/progresso');
@@ -57,6 +58,7 @@ app.use('/api/jornadas', jornadasRoutes);
 app.use('/api/tarefas', tarefasRoutes);
 app.use('/api/notificacoes', notificacoesRoutes);
 app.use('/api/amizades', amizadesRoutes);
+app.use('/api/chat', chatRoutes);
 
 // ─── Banco de Dados ──────────────────────────────────────────
 async function conectarDB() {

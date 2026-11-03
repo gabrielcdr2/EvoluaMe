@@ -164,8 +164,8 @@ router.get('/', async (req, res) => {
         { destinatario: req.usuario._id },
       ],
     })
-      .populate('solicitante', 'nome email')
-      .populate('destinatario', 'nome email');
+      .populate('solicitante', 'id nome email')
+      .populate('destinatario', 'id nome email');
 
     const amigos = amizades.map((amizade) => {
       const souSolicitante = amizade.solicitante._id.equals(req.usuario._id);

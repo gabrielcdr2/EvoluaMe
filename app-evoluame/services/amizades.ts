@@ -4,7 +4,8 @@ const BASE_URL =
   "https://evoluame.onrender.com";
 
 export interface UsuarioAmigo {
-  _id: string;
+ _id: string;
+  id: string;
   nome: string;
   email: string;
 }

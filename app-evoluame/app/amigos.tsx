@@ -28,6 +28,7 @@ import {
   recusarSolicitacaoAmizade,
   listarAmigos,
 } from "../services/amizades";
+import { iniciarConversa } from "../services/chat";
 
 const VERDE = "#2FD98D";
 
@@ -57,6 +58,7 @@ export default function AmigosScreen() {
   const [atualizando, setAtualizando] = useState(false);
   const [processandoId, setProcessandoId] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [abrindoChatId, setAbrindoChatId] = useState<string | null>(null);
 
   const [erroCarregamento, setErroCarregamento] = useState("");
 
@@ -201,7 +203,26 @@ export default function AmigosScreen() {
     }
   }
 
-function obterOutroUsuario(amizade: Amizade): UsuarioAmigo {
+  async function abrirConversa(amigo: UsuarioAmigo) {
+    if (!token || abrindoChatId) return;
+    setAbrindoChatId(amigo.id);
+    try {
+      const conversa = await iniciarConversa(token, amigo.id);
+      router.push({
+        pathname: "/chat/[conversaId]" as any,
+        params: { conversaId: conversa.conversaId, amigoNome: amigo.nome },
+      });
+    } catch (erro: any) {
+      Alert.alert(
+        "Não foi possível abrir o chat",
+        erro?.message ?? "Tente novamente.",
+      );
+    } finally {
+      setAbrindoChatId(null);
+    }
+  }
+
+  function obterOutroUsuario(amizade: Amizade): UsuarioAmigo {
   return amizade.usuario;
 }
 
@@ -526,6 +547,22 @@ function obterOutroUsuario(amizade: Amizade): UsuarioAmigo {
                       </Text>
                     </View>
                   </View>
+                  <TouchableOpacity
+                    style={[styles.botao, abrindoChatId === amigo.id && styles.desabilitado]}
+                    onPress={() => abrirConversa(amigo)}
+                    disabled={abrindoChatId !== null}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Conversar com ${amigo.nome}`}
+                  >
+                    {abrindoChatId === amigo.id ? (
+                      <ActivityIndicator color="#161616" />
+                    ) : (
+                      <>
+                        <Ionicons name="chatbubble-ellipses-outline" size={19} color="#161616" />
+                        <Text style={[styles.botaoTexto, { fontSize: 14 * tamanhoFonte }]}>Conversar</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
                 </View>
               );
             })
