@@ -75,11 +75,24 @@ export default function TelaChat() {
   }, [conversaId, token]);
 
   useFocusEffect(
-    useCallback(() => {
-      setCarregando(true);
-      void carregarMensagens();
-    }, [carregarMensagens]),
-  );
+  useCallback(() => {
+    let ativo = true;
+
+    setCarregando(true);
+    void carregarMensagens();
+
+    const intervalo = setInterval(() => {
+      if (ativo) {
+        void carregarMensagens();
+      }
+    }, 3000);
+
+    return () => {
+      ativo = false;
+      clearInterval(intervalo);
+    };
+  }, [carregarMensagens]),
+);
 
   async function enviarMensagem() {
     const conteudo = rascunho.trim();
