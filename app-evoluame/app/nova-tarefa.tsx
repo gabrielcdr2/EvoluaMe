@@ -81,7 +81,16 @@ export default function NovaTarefaScreen() {
         requerAnexo
       );
 
-      router.back();
+      Alert.alert(
+  "Sucesso",
+  "Tarefa criada com sucesso!",
+  [
+    {
+      text: "OK",
+      onPress: () => router.back(),
+    },
+  ]
+);
     } catch (err: any) {
       Alert.alert(
         'Erro',

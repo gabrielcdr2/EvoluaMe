@@ -38,6 +38,7 @@ export async function salvarSessao(token: string, usuario: UsuarioSessao) {
 /** Remove token e dados (logout) */
 export async function limparSessao() {
   await AsyncStorage.multiRemove([TOKEN_KEY, USUARIO_KEY]);
+  avisarMudancaSessao();
 }
 
 /** Retorna o token salvo (para enviar nas requisições autenticadas) */
@@ -55,21 +56,34 @@ export function useAuth() {
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
+    let ativo = true;
+
     async function carregar() {
       try {
         const [tok, usuarioJson] = await Promise.all([
           AsyncStorage.getItem(TOKEN_KEY),
           AsyncStorage.getItem(USUARIO_KEY),
         ]);
+
+        if (!ativo) return;
+
         setToken(tok);
         setUsuario(usuarioJson ? JSON.parse(usuarioJson) : null);
-      } catch (e) {
-        console.log("Erro ao carregar sessão:", e);
+      } catch (erro) {
+        console.log("Erro ao carregar sessão:", erro);
       } finally {
-        setCarregando(false);
+        if (ativo) setCarregando(false);
       }
     }
+
     carregar();
+
+    const pararObservacao = observarSessao(carregar);
+
+    return () => {
+      ativo = false;
+      pararObservacao();
+    };
   }, []);
 
   return { usuario, token, carregando };

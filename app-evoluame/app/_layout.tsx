@@ -31,17 +31,24 @@ function Navegacao() {
     // Executa somente quando o layout é iniciado.
     // Impede que uma sessão antiga libere o acesso.
     async function iniciarSessao() {
-      try {
-        await limparSessao();
-      } catch (erro) {
-        console.log("Erro ao iniciar sessão:", erro);
-      } finally {
-        if (ativo) {
-          setAutenticado(false);
-          setVerificando(false);
-        }
-      }
+  try {
+    const token = await getToken();
+
+    if (ativo) {
+      setAutenticado(!!token);
     }
+  } catch (erro) {
+    console.log("Erro ao iniciar sessão:", erro);
+
+    if (ativo) {
+      setAutenticado(false);
+    }
+  } finally {
+    if (ativo) {
+      setVerificando(false);
+    }
+  }
+}
 
     // Nas mudanças posteriores, apenas consulta o token.
     // Não apaga a sessão criada pelo login.

@@ -138,7 +138,16 @@ export default function NovaJornadaScreen() {
     try {
       setLoading(true);
       await criarJornada(token, nome.trim(), categoria);
-      router.back();
+     Alert.alert(
+  "Sucesso",
+  "Jornada criada com sucesso!",
+  [
+    {
+      text: "OK",
+      onPress: () => router.back(),
+    },
+  ]
+);
     } catch (err: any) {
       Alert.alert('Erro', err.message ?? 'Não foi possível criar a jornada.');
     } finally {

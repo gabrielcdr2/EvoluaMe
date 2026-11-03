@@ -16,6 +16,7 @@ import { useAcessibilidade } from "@/contexts/AcessibilidadeContext";
 import { useAuth } from "@/hooks/useAuth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
+import { limparSessao } from "../hooks/useAuth";
 
 const VERDE = "#2FD98D";
 
@@ -530,6 +531,53 @@ export default function ConfiguracoesScreen() {
           />
         </View>
       </View>
+
+<TouchableOpacity
+  onPress={() => {
+    Alert.alert(
+      "Sair da conta",
+      "Deseja realmente encerrar sua sessão?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Sair",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await limparSessao();
+            } catch (erro) {
+              Alert.alert("Erro", "Não foi possível sair da conta.");
+            }
+          },
+        },
+      ]
+    );
+  }}
+  style={[
+    styles.card,
+    {
+      backgroundColor: cores.card,
+      borderColor: "#E53935",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+    },
+  ]}
+  accessibilityRole="button"
+  accessibilityLabel="Sair da conta"
+>
+  <Ionicons name="log-out-outline" size={22} color="#E53935" />
+  <Text
+    style={{
+      color: "#E53935",
+      fontSize: 16 * tamanhoFonte,
+      fontWeight: "700",
+    }}
+  >
+    Sair da conta
+  </Text>
+</TouchableOpacity>
 
       <View style={styles.rodape}>
         <Ionicons name="checkmark-circle" size={19} color={VERDE} />
