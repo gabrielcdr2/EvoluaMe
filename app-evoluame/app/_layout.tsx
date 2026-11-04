@@ -11,6 +11,8 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { getToken, limparSessao, observarSessao } from "../hooks/useAuth";
+import { registrarPushTokenAPI } from "../services/api";
+import { registrarNotificacoesPush } from "../services/notificacoes";
 
 import {
   AcessibilidadeProvider,
@@ -29,17 +31,24 @@ function Navegacao() {
     // Executa somente quando o layout é iniciado.
     // Impede que uma sessão antiga libere o acesso.
     async function iniciarSessao() {
-      try {
-        await limparSessao();
-      } catch (erro) {
-        console.log("Erro ao iniciar sessão:", erro);
-      } finally {
-        if (ativo) {
-          setAutenticado(false);
-          setVerificando(false);
-        }
-      }
+  try {
+    const token = await getToken();
+
+    if (ativo) {
+      setAutenticado(!!token);
     }
+  } catch (erro) {
+    console.log("Erro ao iniciar sessão:", erro);
+
+    if (ativo) {
+      setAutenticado(false);
+    }
+  } finally {
+    if (ativo) {
+      setVerificando(false);
+    }
+  }
+}
 
     // Nas mudanças posteriores, apenas consulta o token.
     // Não apaga a sessão criada pelo login.
@@ -71,6 +80,40 @@ function Navegacao() {
       pararObservacao();
     };
   }, []);
+
+  // Registra o dispositivo para receber notificações push
+  // sempre que o usuário estiver autenticado.
+  useEffect(() => {
+    if (!autenticado) return;
+
+    let ativo = true;
+
+    async function prepararNotificacoes() {
+      try {
+        const pushToken = await registrarNotificacoesPush();
+
+        if (!ativo || !pushToken) return;
+
+        const token = await getToken();
+
+        if (!ativo || !token) return;
+
+        await registrarPushTokenAPI(token, pushToken);
+
+        if (!ativo) return;
+
+        console.log("Dispositivo registrado para notificações push!");
+      } catch (erro) {
+        console.log("Erro ao registrar dispositivo para notificações:", erro);
+      }
+    }
+
+    prepararNotificacoes();
+
+    return () => {
+      ativo = false;
+    };
+  }, [autenticado]);
 
   if (verificando) {
     return (

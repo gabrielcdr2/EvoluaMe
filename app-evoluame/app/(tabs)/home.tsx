@@ -1,4 +1,6 @@
 import React, { useCallback, useRef, useState } from "react";
+import { useAudioPlayer } from "expo-audio";
+import { obterSonsAtivados } from "@/services/sons";
 
 import {
   View,
@@ -174,6 +176,10 @@ export default function HomeScreen() {
     ]).start(() => setToast({ mensagem: "", visivel: false }));
   }
 
+  const playerConclusao = useAudioPlayer(
+    require("../../assets/sounds/evento.wav"),
+  );
+
   async function handleConcluirTarefa(tarefaId: string) {
     if (!token || !usuario) return;
 
@@ -207,6 +213,18 @@ export default function HomeScreen() {
       });
 
       mostrarToast(resultado.mensagem);
+
+      // O som respeita a preferência das Configurações.
+      // Falhas no áudio não interferem na conclusão da tarefa.
+      try {
+        const sonsAtivados = await obterSonsAtivados();
+        if (sonsAtivados) {
+          await playerConclusao.seekTo(0);
+          playerConclusao.play();
+        }
+      } catch (erroAudio) {
+        console.log("Não foi possível reproduzir o som:", erroAudio);
+      }
     } catch (error: any) {
       mostrarToast(error.message ?? "Erro ao concluir tarefa");
     }
@@ -717,85 +735,102 @@ export default function HomeScreen() {
 
       {/* ---------- Barra de navegação inferior ---------- */}
 
-      <View style={styles.tabBar}>
-        <View
-          accessibilityRole="tab"
-          accessibilityLabel="Início"
-          accessibilityState={{ selected: true }}
-          style={styles.tabItem}
-        >
-          <Ionicons name="home" size={22} color={COLORS.green} />
 
+    <View style={styles.tabBar}>
+      {/* Início */}
+      <View
+        accessibilityRole="tab"
+        accessibilityLabel="Início"
+        accessibilityState={{ selected: true }}
+        style={styles.tabItem}
+      >
+        <Ionicons name="home" size={22} color={COLORS.green} />
+
+        <Text
+          style={[
+            styles.tabLabel,
+            { color: COLORS.green, fontSize: 10 * tamanhoFonte },
+          ]}
+        >
+          Início
+        </Text>
+      </View>
+
+      {/* Jornadas */}
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => router.push("/atividades")}
+        accessibilityRole="button"
+        accessibilityLabel="Jornadas"
+        accessibilityHint="Abre a tela de atividades e jornadas"
+      >
+        <MaterialCommunityIcons
+          name="compass-outline"
+          size={22}
+          color={COLORS.textGray}
+        />
+
+        <Text style={[styles.tabLabel, { fontSize: 10 * tamanhoFonte }]}>
+          Jornadas
+        </Text>
+      </TouchableOpacity>
+
+      {/* Logo central */}
+      <View accessible={false} style={styles.tabCenterWrapper}>
+        <LinearGradient
+          colors={[COLORS.green, "#0EA5E9"]}
+          style={styles.tabCenterCircle}
+        >
           <Text
             style={[
-              styles.tabLabel,
-
-              { color: COLORS.green },
-
-              { fontSize: 10 * tamanhoFonte },
+              styles.tabCenterLetter,
+              { fontSize: 20 * tamanhoFonte },
             ]}
           >
-            Início
+            E
           </Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => router.push("/atividades")}
-          accessibilityRole="button"
-          accessibilityLabel="Jornadas"
-          accessibilityHint="Abre a tela de atividades e jornadas"
-        >
-          <MaterialCommunityIcons
-            name="compass-outline"
-            size={22}
-            color={COLORS.textGray}
-          />
-
-          <Text style={[styles.tabLabel, { fontSize: 10 * tamanhoFonte }]}>
-            Jornadas
-          </Text>
-        </TouchableOpacity>
-
-        <View accessible={false} style={styles.tabCenterWrapper}>
-          <LinearGradient
-            colors={[COLORS.green, "#0EA5E9"]}
-            style={styles.tabCenterCircle}
-          >
-            <Text
-              style={[styles.tabCenterLetter, { fontSize: 20 * tamanhoFonte }]}
-            >
-              E
-            </Text>
-          </LinearGradient>
-        </View>
-
-        <View
-          accessible
-          accessibilityLabel="Perfil, funcionalidade ainda não disponível"
-          style={styles.tabItem}
-        >
-          <Ionicons name="person-outline" size={22} color={COLORS.textGray} />
-
-          <Text style={[styles.tabLabel, { fontSize: 10 * tamanhoFonte }]}>
-            Perfil
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => router.push("/configuracoes")}
-          accessibilityRole="button"
-          accessibilityLabel="Configurações de acessibilidade"
-          accessibilityHint="Abre as preferências de acessibilidade"
-        >
-          <Ionicons name="settings-outline" size={22} color={COLORS.textGray} />
-
-          <Text style={[styles.tabLabel, { fontSize: 10 * tamanhoFonte }]}>
-            Config.
-          </Text>
-        </TouchableOpacity>
+        </LinearGradient>
       </View>
+
+      {/* Amigos - substitui Perfil */}
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => router.push("/amigos")}
+        accessibilityRole="button"
+        accessibilityLabel="Amigos"
+        accessibilityHint="Abre a tela de amigos"
+      >
+        <Ionicons
+          name="people-outline"
+          size={22}
+          color={COLORS.textGray}
+        />
+
+        <Text style={[styles.tabLabel, { fontSize: 10 * tamanhoFonte }]}>
+          Amigos
+        </Text>
+      </TouchableOpacity>
+
+      {/* Configurações - acessibilidade preservada */}
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => router.push("/configuracoes")}
+        accessibilityRole="button"
+        accessibilityLabel="Configurações de acessibilidade"
+        accessibilityHint="Abre as preferências de acessibilidade"
+      >
+        <Ionicons
+          name="settings-outline"
+          size={22}
+          color={COLORS.textGray}
+        />
+
+        <Text style={[styles.tabLabel, { fontSize: 10 * tamanhoFonte }]}>
+          Config.
+        </Text>
+      </TouchableOpacity>
+    </View>
+
     </SafeAreaView>
   );
 }

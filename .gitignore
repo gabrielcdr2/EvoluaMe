@@ -33,3 +33,6 @@ yarn-error.*
 .copilot/
 .gemini/
 .agents/
+
+.env
+.env.*
