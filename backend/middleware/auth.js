@@ -1,7 +1,12 @@
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
+const { verificarSessao } = require('../services/sessoes');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'evoluame-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET não configurada no servidor.');
+}
 
 /**
  * Middleware que verifica o token JWT no header Authorization.
@@ -16,6 +21,15 @@ async function autenticar(req, res, next) {
 
     const token = header.split(' ')[1];
     const payload = jwt.verify(token, JWT_SECRET);
+    const sessaoValida = await verificarSessao(payload);
+
+if (!sessaoValida) {
+  return res.status(401).json({
+    erro: 'Sessão expirada ou revogada. Faça login novamente.',
+  });
+}
+
+req.sessaoJti = payload.jti;
 
     const usuario = await Usuario.findOne({ id: payload.id }).select('-senha');
     if (!usuario) {

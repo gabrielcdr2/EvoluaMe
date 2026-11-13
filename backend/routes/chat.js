@@ -7,6 +7,10 @@ const { supabaseAdmin } = require('../services/supabase');
 
 const router = express.Router();
 
+const formatoUUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Todas as rotas de chat exigem autenticação
 router.use(autenticar);
 
 // Verifica se o chat está autenticado
@@ -26,7 +30,7 @@ router.post('/conversas', async (req, res) => {
 
     if (
       typeof amigoId !== 'string' ||
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(amigoId)
+      !formatoUUID.test(amigoId)
     ) {
       return res.status(400).json({
         erro: 'Identificador do amigo inválido.',
@@ -75,7 +79,10 @@ router.post('/conversas', async (req, res) => {
         .from('conversas')
         .upsert(
           { chave_par: chavePar },
-          { onConflict: 'chave_par', ignoreDuplicates: true }
+          {
+            onConflict: 'chave_par',
+            ignoreDuplicates: true,
+          }
         )
         .select('id, chave_par')
         .maybeSingle();
@@ -93,22 +100,26 @@ router.post('/conversas', async (req, res) => {
         .eq('chave_par', chavePar)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
+
       conversaAtual = data;
     }
 
-    const { error: erroParticipantes } = await supabaseAdmin
-      .from('conversa_participantes')
-      .upsert(
-        participantes.map((usuarioId) => ({
-          conversa_id: conversaAtual.id,
-          usuario_id: usuarioId,
-        })),
-        {
-          onConflict: 'conversa_id,usuario_id',
-          ignoreDuplicates: true,
-        }
-      );
+    const { error: erroParticipantes } =
+      await supabaseAdmin
+        .from('conversa_participantes')
+        .upsert(
+          participantes.map((usuarioId) => ({
+            conversa_id: conversaAtual.id,
+            usuario_id: usuarioId,
+          })),
+          {
+            onConflict: 'conversa_id,usuario_id',
+            ignoreDuplicates: true,
+          }
+        );
 
     if (erroParticipantes) {
       throw erroParticipantes;
@@ -130,15 +141,11 @@ router.post('/conversas', async (req, res) => {
   }
 });
 
-
- // Consulta o histórico de mensagens de uma conversa
+// Consulta o histórico de mensagens de uma conversa
 router.get('/conversas/:conversaId/mensagens', async (req, res) => {
   try {
     const { conversaId } = req.params;
     const usuarioId = req.usuario.id;
-
-    const formatoUUID =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
     if (!formatoUUID.test(conversaId)) {
       return res.status(400).json({
@@ -192,19 +199,12 @@ router.get('/conversas/:conversaId/mensagens', async (req, res) => {
   }
 });
 
-
-module.exports = router;
-
-
- // Envia uma mensagem para uma conversa da qual o usuário participa
+// Envia uma mensagem para uma conversa da qual o usuário participa
 router.post('/conversas/:conversaId/mensagens', async (req, res) => {
   try {
     const { conversaId } = req.params;
     const remetenteId = req.usuario.id;
     const conteudo = req.body?.conteudo;
-
-    const formatoUUID =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
     if (!formatoUUID.test(conversaId)) {
       return res.status(400).json({
@@ -269,3 +269,5 @@ router.post('/conversas/:conversaId/mensagens', async (req, res) => {
   }
 });
 
+// Exporta o roteador após registrar todas as rotas
+module.exports = router;

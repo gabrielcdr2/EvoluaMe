@@ -5,8 +5,13 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const Usuario = require('../models/Usuario');
 const { autenticar } = require('../middleware/auth');
+const { criarSessao, revogarSessao } = require('../services/sessoes');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'evoluame-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET não configurada no servidor.');
+}
 
 // ─── POST /api/auth/cadastro ─────────────────────────────────
 // Registra um novo usuário
@@ -34,11 +39,7 @@ router.post('/cadastro', async (req, res) => {
       senha: senhaHash,
     });
 
-    const token = jwt.sign(
-      { id: usuario.id, email: usuario.email },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+ const token = await criarSessao(usuario);
 
     res.status(201).json({
       mensagem: 'Usuário criado com sucesso!',
@@ -80,11 +81,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ erro: 'Email ou senha incorretos.' });
     }
 
-    const token = jwt.sign(
-      { id: usuario.id, email: usuario.email },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+   const token = await criarSessao(usuario);
 
     res.json({
       mensagem: 'Login realizado com sucesso!',
@@ -115,5 +112,23 @@ router.get('/me', autenticar, (req, res) => {
     xpTotal: u.xpTotal,
   });
 });
+
+
+router.post('/logout', autenticar, async (req, res) => {
+  try {
+    await revogarSessao(req.sessaoJti, req.usuario.id);
+
+    return res.json({
+      mensagem: 'Sessão encerrada com sucesso.',
+    });
+  } catch (err) {
+    console.error('Erro ao encerrar sessão:', err);
+
+    return res.status(500).json({
+      erro: 'Não foi possível encerrar a sessão.',
+    });
+  }
+});
+
 
 module.exports = router;
